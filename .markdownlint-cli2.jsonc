@@ -1,0 +1,13 @@
+{
+  // Prose wraps at 80. Table rows and code blocks cannot wrap without breaking
+  // what they encode, so they are exempt rather than mangled.
+  "config": {
+    "MD013": {
+      "line_length": 80,
+      "tables": false,
+      "code_blocks": false
+    }
+  },
+  "globs": ["**/*.md"],
+  "ignores": ["node_modules/**"]
+}

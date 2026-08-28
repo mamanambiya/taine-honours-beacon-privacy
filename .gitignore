@@ -1,0 +1,42 @@
+# Cohort data is never committed — it is large, and some of it is controlled-access.
+data/**
+!data/README.md
+!data/.gitkeep
+
+# Generated outputs
+results/figures/*
+results/tables/*
+!results/**/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# OS
+.DS_Store
+.remember/
+*.code-workspace
+
+# Generated documents. worklist-for-taine.md is the source; rebuild the PDF,
+# Word and LaTeX from it with md2pdf.sh (kept in the beacon repository, at
+# docs/developers/md2pdf.sh).
+results/*.pdf
+results/*.docx
+results/*.tex
+
+# Internal working files — not part of the project repository.
+README.md
+TASKS.md
+analysis/README.md
+docs/findings-simulated.md
+build-brief.sh
+md2pdf.sh
+md2pdf_body.py

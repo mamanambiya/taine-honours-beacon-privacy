@@ -1,0 +1,106 @@
+Taine Archbold
+B. Sc. Bioinformatics Honours Programme
+Implementation, Evaluation and Extension of Beacon version 2.0 for African data
+Nicola Mulder & Ayton Meintjes
+
+
+
+
+
+
+
+Plagiarism Declaration:
+	•	I know that plagiarism is a serious form of academic dishonesty.
+	•	I have read the document about avoiding plagiarism, am familiar with its contents and have avoided all forms of plagiarism mentioned there.
+	•	Where I have used the words of others, I have indicated this by the use of quotation marks.
+	•	I have referenced all quotations and properly acknowledged other ideas borrowed from others.
+	•	I have not and shall not allow others to plagiarise my work.
+	•	I declare that this is my own work.
+	•	I am attaching the summary of the Turnitin match overview (when required to do so).
+Signature:
+
+________________________
+Introduction
+The genomic data of African populations is simultaneously scarce and incredibly valuable in the context of global genomic studies, particularly with regards to providing insights into novel genetic variants and applications in precision healthcare. As the origin of modern humans, Africa is regarded for its extensive evolutionary history, unique architecture and intricate genetic profile advantageous to worldwide genomic studies (Ojewunmi & Fatumo, 2025). However, the genomic data of African populations remains underrepresented in global gene studies despite this biomedical significance (Sirugo et al., 2019), drastically limiting the progression of overall gene understanding, discovery and research, as well as any possible applications towards precision medicine. 
+Only a small percentage of African genomic data contributes to global studies, with existing data primarily originating from Kenyan, Nigerian, and South African populations, and is thus an inexhaustive representation of the continent’s total genetic diversity (Omotoso et al., 2022). This non-inclusiveness in global genomic data is accompanied by the predominance of European populations in existing genetic studies. Large-scale genetic research including Genome-Wide Association Studies (GWASs) involve an overrepresentation of European data, and genome biobanks predominantly feature individuals of European ancestry (Mills & Rahal, 2019).
+The disparity created by this Eurocentric bias in published GWAS research combined with the severe lack of representation for African populations impedes global efforts towards large-scale studies such as genetic association with disease (Fatumo & Inouye, 2023) and further exacerbates the existing health inequalities as genomic studies exclude vulnerable populations (Sirugo et al., 2019), such as the misclassification of variants arising from a paucity of diverse data (Manrai et al., 2016). Improving worldwide health equity in the context of biomedicine requires an active effort to ensure the diversity of the human population is adequately reflected in genomic research (Madden et al., 2024) - a development that directly involves the inclusion and prioritization of African genetic cohorts in global studies (Lumaka et al., 2022) and improved genetic delivery service models within the continent (Kamp et al., 2021), possibly through an aggregated reference frequency populated with diverse African data (Lumaka et al., 2022).
+
+A recent development towards improving genetic service delivery and variant discovery is the AfriGen-D Beacon: a simple data discovery protocol proposed by The Global Alliance for Genomics & Health (GA4GH) as a standardized model for the federated discovery and sharing of genomic data (Rueda et al., 2022). The Beacon Project was issued as an API specification to aid users in querying allelic information while honouring individual confidentiality – a use case applicable to researchers and clinicians investigating the presence of a single variant in a dataset (Naro et al., 2024). 
+Each Beacon acts as an adaptable, web-accessible interface to retrieve genomic information from select repositories across an integrated network, returning a binary response to confirm if a given variant is present or absent in databases hosted by Beacon providers (Fiume et al., 2019). This protocol allows information regarding a particular allele to be remotely discovered, without the disclosure of confidential information concerning the sample or patient from which the variant originates. Additionally, the version 2 implementation designed for clinical use allows the response to be extended to include metadata regarding allele frequencies, pathogenicity scores and any associated phenotypes, and different levels of access may be granted according to data sensitivity or granularity (Rambla et al., 2022).
+
+As a service intended for the distribution and discovery of genomic variants, Beacon is responsible for ensuring security of sensitive information in accordance with the established GA4GH framework for sharing genomic data (Knoppers, 2014). Despite the efforts of The Beacon Project towards mitigating the risk of re-identification, the privacy of individual data remains a critical concern. While an allele-presence query is anonymised, patient data is still susceptible to membership-inference attacks through a likelihood-ratio test (Shringarpure & Bustamante, 2015). The Bustamante attack model evaluated on the 1000 Genomes Project demonstrates sufficient anonymous queries can still disclose information regarding the presence of individuals in a database given the genome sample, suggesting Beacon remains vulnerable to re-identification attacks. This is further confirmed through a novel optimization-based Beacon Reconstruction algorithm (Saleem et al., 2025) indicating the need for protection against reconstruction attacks exploiting inherent genome correlations (Ayoz et al., 2021).
+GA4GH does indeed recognize the legal and ethical responsibility surrounding the distribution of potentially sensitive data and has proposed a Data Sharing Privacy Test for contextual degrees of protection towards regulated access and control in the context of Beacon discovery (Dyke et al., 2016). Alternative protection measures have been proposed in response to the Bustamante attack model that utilize a risk analysis to determine a threshold number of queries for re-identification and introduce inaccurate results as a means of privacy protection, relying on the assumption of a nonanonymous user (Aziz et al., 2017), or introduce the concept of a query budget that prevents further discovery once exceeded (Raisaro et al., 2017). However, these solutions inherently compromise the functionality of Beacon as a data delivery service through deliberate errors or limited responses. 
+
+The AfriGen-D GA4GH Beacon v2 deployment is presently the only verifier-conformant GA4GH Beacon v2 over the African reference cohort V6HC-S_AFR. It has a documented codebase and sister network aggregator in active deployment, and the African reference cohort currently captures 1895 individuals with data aligned to GRCh38, however it remains unknown whether the data vulnerability characterized in published Beacon literature transfers to the African cohort data due to the lack of evaluations against the AfriGen-D deployment.
+The existing concerns regarding the privacy and security of Beacon as a data delivery service have yet to be contextualised with regards to African genomics. A higher risk of re-identification is posed due to the complex genome landscape of African data resulting in increased diversity - the ramifications of which are exacerbated by the lack of socioeconomic infrastructure placing African populations at greater vulnerability (Tiffin, 2019). Mitigating the risk of a privacy breach involves optimizing the trade-off between Beacon’s intended utility and protection against adversary attacks, which is yet to be fully evaluated in the context of African genomic data.Aim & Objectives
+
+“Does the membership-inference attack-power on a Beacon vary with the ancestry of the underlying cohort, and what feature, if any, of the allele-frequency spectrum drives the difference in data vulnerability?”
+
+This proposal aims to empirically determine if the published Beacon attack-power numbers evaluated on European 1000G data transfer to the AfriGen-D Beacon.
+
+Null Hypothesis H0 = Membership-inference attack-power is independent from the ancestry of the underlying cohort.
+Alternative Hypothesis H1 = Membership-inference attack-power varies with the ancestry of the underlying cohort.
+
+If the attacks indeed scale across populations, the privacy posture is weaker than estimated and corresponding defence measures against reconstruction attacks should be evaluated. Otherwise, an argument is made for the implementation of population-aware risk modelling, as it is demonstrated that re-identification attack power is dependent on the underlying cohort.
+Performing a Comparative Power Analysis involves the following:
+	•	Implement the Likelihood-Ratio Test according to the Shringarpure & Bustamante attack model.
+	•	Replicate the re-identification attack against a Beacon constructed using African cohorts of the 1000G database.
+	•	Validate results against existing African Beacons.
+	•	Characterize the re-identification attack power across both African and European reference beacons.
+	•	Determine impact of allele-frequency spectrum (rare-variant load, LD block size, FST, etc.) on attack power.
+
+Methods
+Re-implementing the Bustamante membership-inference attack
+The privacy evaluation performed against the European 1000G data simulates the Bustamante attack model, as the approach with the highest statistical guarantee towards the problem of genomic re-identification (Shringarpure & Bustamante, 2015). 
+The Bustamante attack assumes both a Beacon composed of unrelated individuals from a single population, and attacker possession of a target individual’s genome as a Variant Call Format (VCF) file, in the form of all SNP positions containing an alternate allele as well as the respective genotype calls for each position.
+Query q = {C, P, A} represents a query of the following format:
+“Have you observed allele A as an alternate allele at position P on chromosome C?”
+Given the set Q = {q1, q2, …, qn}, the beacon returns set R = {x1, x2, … xn}, representing the queries and responses for n bi-allelic SNPs. It also assumes the attacker has knowledge of Beacon size N and the size frequency spectrum (SFS) of the population. This further assumes the alternate allele frequency f for all observed SNPs follows the distribution:
+f ~ β (a’, b’)
+The attacker queries the Beacon with set Q for all heterozygous positions using the alternate allele A obtained through the VCF file listings, and Beacon returns the set R. Using this set of responses a Likelihood-Ratio Test performs a membership-inference attack, evaluating the probability of the Beacon’s responses. This LRT does not rely on a population’s allele frequencies, and is instead dependant on SFS shape, creating results generalizable across populations.
+If query genome g is in Beacon database B, we would expect x1 = x2 = … = xn = 1, though sequencing errors resulting in mismatch between query and genome copy are assumed with probability δ.
+fi forms the frequency of the alternate allele queried by qi. Note that f does not follow the distribution f ~ β (a’, b’) since set Q only concerns heterozygous positions, thus demonstrating an ascertainment bias.
+The LRT statistic is stated as:
+
+Where  and , DN being the probability that none of N genomes possess an alternate allele at a given position.
+This LRT tests for the simple null hypothesis H0 = θ = 1 − DN, where the query genome is not in the Beacon database, against the simple alternative hypothesis H1: θ = 1 − δDN.
+Through binomial test, a sufficient statistic for the LRT is the number of “yes” responses returned from the beacon. The LRT is proven to follow a Gaussian distribution, which can therefore be used to obtain a relationship between the number of queries required for achieving a desired power and false-positive rate, and the number of individuals in the Beacon.
+Shringarpure & Bustamante initially simulated 500 000 SNPs in a diploid sample of size 1 000, before constructing an experimental beacon using publicly available CEU population from Phase 1 of the 1000 Genomes Project. The European population analysis was performed using a sample size of 85, with 65 individuals present in the Beacon, and queries consisting of 20 genomes present and the remaining 20 genomes absent from the Beacon. In order to test the effect of censoring on attack power, an additional Beacon was constructed to always return negative response to singleton queries, and similarly queried with whole genomes.
+The initial Beacon simulation of 1 000 individuals and 500 000 SNPs validated the LRT framework, demonstrating attack power and supporting statistical predictions. The evaluation against real data further corroborated the theoretical analysis, demonstrating re-identification is possible with just 250 SNPs yielding membership-inference with 95% power and 5% false-positive rate. Further evaluation was performed on additional existing Beacons, including SFARI, UK10K, and PGP.
+Replicating the 1000 Genomes Data
+For the purpose of comparative power analysis, a replication of the 1000G Beacon attack will be necessary, in order to accurately determine data vulnerability given matched sample sizes. An experimental Beacon of size 500 will obtain African cohort data from the publicly available 1000G reference Beacon.
+In accordance with the data evaluation performed by Shringarpure & Bustamante analysed a priori, we specify a false-positive rate α = 0.05 to computer power (1 – β), visualising results in the form of a power curve for likelihood-ratio tests.
+The replication of the attack against specifically the African data serves to empirically determine the impact of underlying cohort on attack power. 
+Validating against African cohort data
+Following the Bustamente attack against the experimental 1000G Beacon, the attack powers obtained through replication should be evaluated in the context of existing African genome Beacons to determine data vulnerability in a practical setting.
+With AfriGen-D as a live deployment, the following Beacons will be suitable for evaluation: 
+	•	ARDI Beacon – https://beacon.ardi.africa/ 
+	•	AfriGen-D Beacon – https://beacon.afrigen-d.org/ 
+	•	African Beacon Network (federation aggregator) – https://beacon-network-dev.afrigen-d.dev/ 
+Comparative power analysis 
+Given the matched sample sizes, vulnerability will be evaluated through the number of queries required for successful re-identification, to empirically determine if the attack-power against European data is transferable to African cohorts.
+A null hypothesis confirming scalability of attack-power between cohorts supports the implementation of an optimal MAF threshold for the prevention of adversary attacks.
+Under the alternate hypothesis, the allele frequency spectrum between cohort datasets will be characterized to observe the potential impact of underlying cohorts on re-identification risk.
+References
+Ayoz, K., Ayday, E., & Cicek, A. E. (2021). Genome Reconstruction Attacks Against Genomic Data-Sharing Beacons. Proceedings on Privacy Enhancing Technologies, 2021(3), 28–48. https://doi.org/10.2478/popets-2021-0036 
+Aziz, M. M. Al, Ghasemi, R., Waliullah, M., & Mohammed, N. (2017). Aftermath of bustamante attack on genomic beacon service. BMC Medical Genomics, 10(S2), 43. https://doi.org/10.1186/s12920-017-0278-x 
+Dyke, S. O., Dove, E. S., & Knoppers, B. M. (2016). Sharing health-related data: a privacy test? Npj Genomic Medicine, 1(1), 16024. https://doi.org/10.1038/npjgenmed.2016.24 
+Fatumo, S., & Inouye, M. (2023). African genomes hold the key to accurate genetic risk prediction. Nature Human Behaviour, 7(3), 295–296. https://doi.org/10.1038/s41562-023-01549-1 
+Fiume, M., Cupak, M., Keenan, S., Rambla, J., de la Torre, S., Dyke, S. O. M., Brookes, A. J., Carey, K., Lloyd, D., Goodhand, P., Haeussler, M., Baudis, M., Stockinger, H., Dolman, L., Lappalainen, I., Törnroos, J., Linden, M., Spalding, J. D., Ur-Rehman, S., … Scollen, S. (2019). Federated discovery and sharing of genomic data using Beacons. Nature Biotechnology, 37(3), 220–224. https://doi.org/10.1038/s41587-019-0046-x 
+Kamp, M., Krause, A., & Ramsay, M. (2021). Has translational genomics come of age in Africa? Human Molecular Genetics, 30(R2), R164–R173. https://doi.org/10.1093/hmg/ddab180 
+Knoppers, B. M. (2014). Framework for responsible sharing of genomic and health-related data. The HUGO Journal, 8(1), 3. https://doi.org/10.1186/s11568-014-0003-1 
+Lumaka, A., Carstens, N., Devriendt, K., Krause, A., Kulohoma, B., Kumuthini, J., Mubungu, G., Mukisa, J., Nel, M., Olanrewaju, T. O., Lombard, Z., & Landouré, G. (2022). Increasing African genomic data generation and sharing to resolve rare and undiagnosed diseases in Africa: a call-to-action by the H3Africa rare diseases working group. Orphanet Journal of Rare Diseases, 17(1), 230. https://doi.org/10.1186/s13023-022-02391-w 
+Madden, E. B., Hindorff, L. A., Bonham, V. L., Akintobi, T. H., Burchard, E. G., Baker, K. E., Begay, R. L., Carpten, J. D., Cox, N. J., Di Francesco, V., Dillard, D. A., Fletcher, F. E., Fullerton, S. M., Garrison, N. A., Hammack-Aviran, C. M., Hiratsuka, V. Y., Hildreth, J. E. K., Horowitz, C. R., Hughes Halbert, C. A., … Green, E. D. (2024). Advancing genomics to improve health equity. Nature Genetics, 56(5), 752–757. https://doi.org/10.1038/s41588-024-01711-z 
+Manrai, A. K., Funke, B. H., Rehm, H. L., Olesen, M. S., Maron, B. A., Szolovits, P., Margulies, D. M., Loscalzo, J., & Kohane, I. S. (2016). Genetic Misdiagnoses and the Potential for Health Disparities. New England Journal of Medicine, 375(7), 655–665. https://doi.org/10.1056/NEJMsa1507092 
+Mills, M. C., & Rahal, C. (2019). A scientometric review of genome-wide association studies. Communications Biology, 2(1), 9. https://doi.org/10.1038/s42003-018-0261-x 
+Naro, D., Delgado, J., Llorente, S., & Hernaez, M. (2024). Use of Beacon v2 for Improving Genomics Based Research in a Clinical Setting. https://doi.org/10.3233/SHTI240636 
+Ojewunmi, O. O., & Fatumo, S. (2025). Driving Global Health equity and precision medicine through African genomic data. Human Molecular Genetics. https://doi.org/10.1093/hmg/ddaf025 
+Omotoso, O. E., Teibo, J. O., Atiba, F. A., Oladimeji, T., Adebesin, A. O., & Babalghith, A. O. (2022). Bridging the genomic data gap in Africa: implications for global disease burdens. Globalization and Health, 18(1), 103. https://doi.org/10.1186/s12992-022-00898-2 
+Raisaro, J. L., Tramèr, F., Ji, Z., Bu, D., Zhao, Y., Carey, K., Lloyd, D., Sofia, H., Baker, D., Flicek, P., Shringarpure, S., Bustamante, C., Wang, S., Jiang, X., Ohno-Machado, L., Tang, H., Wang, X., & Hubaux, J.-P. (2017). Addressing Beacon re-identification attacks: quantification and mitigation of privacy risks. Journal of the American Medical Informatics Association, 24(4), 799–805. https://doi.org/10.1093/jamia/ocw167 
+Rambla, J., Baudis, M., Ariosa, R., Beck, T., Fromont, L. A., Navarro, A., Paloots, R., Rueda, M., Saunders, G., Singh, B., Spalding, J. D., Törnroos, J., Vasallo, C., Veal, C. D., & Brookes, A. J. (2022). Beacon v2 and Beacon networks: A “lingua franca” for federated data discovery in biomedical genomics, and beyond. Human Mutation. https://doi.org/10.1002/humu.24369 
+Rueda, M., Ariosa, R., Moldes, M., & Rambla, J. (2022). Beacon v2 Reference Implementation: a toolkit to enable federated sharing of genomic and phenotypic data. Bioinformatics, 38(19), 4656–4657. https://doi.org/10.1093/bioinformatics/btac568 
+Saleem, K., Cicek, A. E., & Sav, S. (2025). Beacon Reconstruction Attack: Reconstruction of genomes in genomic data-sharing beacons using summary statistics. Bioinformatics, 41(6). https://doi.org/10.1093/bioinformatics/btaf273 
+Shringarpure, S. S., & Bustamante, C. D. (2015). Privacy Risks from Genomic Data-Sharing Beacons. The American Journal of Human Genetics, 97(5), 631–646. https://doi.org/10.1016/j.ajhg.2015.09.010 
+Sirugo, G., Williams, S. M., & Tishkoff, S. A. (2019). The Missing Diversity in Human Genetic Studies. Cell, 177(1), 26–31. https://doi.org/10.1016/j.cell.2019.02.048 
+Tiffin, N. (2019). Potential risks and solutions for sharing genome summary data from African populations. BMC Medical Genomics, 12(1), 152. https://doi.org/10.1186/s12920-019-0604-6 
+
