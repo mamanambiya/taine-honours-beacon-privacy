@@ -35,6 +35,7 @@ anywhere, so there is nothing to install beyond numpy.
 
 | | |
 | --- | --- |
+| [getting-started.md](docs/getting-started.md) | **Start here.** Nine steps from nothing to a reproduced finding, with the output each should print |
 | [the-attack.md](docs/the-attack.md) | What the attack is, the two hypotheses, and which inputs come from the beacon rather than from you |
 | [how-it-works.md](docs/how-it-works.md) | The six steps of the simulation, and why it is split into a predicted layer and a measured one |
 | [examples.md](docs/examples.md) | Worked examples with real output — one attack, a power curve, the cost of censoring |
