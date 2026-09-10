@@ -33,10 +33,12 @@ results/*.docx
 results/*.tex
 
 # Internal working files — not part of the project repository.
-README.md
-TASKS.md
-analysis/README.md
-docs/findings-simulated.md
+# Root-level only — a bare `README.md` here matches at EVERY level and
+# silently swallowed analysis/simulation/README.md.
+/README.md
+/TASKS.md
+/analysis/README.md
+/docs/findings-simulated.md
 build-brief.sh
 md2pdf.sh
 md2pdf_body.py
