@@ -40,7 +40,7 @@ python3 -m unittest discover -s analysis/simulation -t analysis/simulation
 ```
 
 ```text
-Ran 47 tests in 2.6s
+Ran 85 tests in 5.2s
 
 OK
 ```

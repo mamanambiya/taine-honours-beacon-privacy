@@ -63,6 +63,23 @@ a controlled false-positive rate still measures anything.
 `None` is a result, not a failure: it means the attack cannot exploit that
 spectrum at any budget searched.
 
+## `sfs_fit.py` — fit the spectrum to a real panel
+
+numpy only. Full walk-through, including the ILIFU step: [fitting-the-sfs.md](fitting-the-sfs.md).
+
+| Function | |
+| --- | --- |
+| `log_pmf(k, n_individuals, a, b)` | `log P(K = k)` for `f ~ Beta(a, b)`, `K ~ Binomial(2N, f)`. `P(K = 0)` equals `lrt.d_n(a, b, N)`. |
+| `count_histogram(counts, n_individuals)` | Variants per alternate-allele count `0 .. 2N`. Refuses a count above `2N`. |
+| `read_histogram(path, n_individuals)` | Reads `count<TAB>variants`; repeated counts are summed, so per-chromosome tables concatenate. |
+| `fit_beta_binomial(histogram, n_individuals, min_count=1)` | MLE `(a, b)` conditioned on `K >= min_count`. Returns `a, b, se_a, se_b, loglik, converged, at_boundary, n_variants`. Refuses an empty histogram, a wrong length, counts below `min_count`, and a single occupied bin. |
+| `diagnostics(histogram, n_individuals, a, b, min_count=1)` | Observed vs fitted singleton, rare (MAF < 1%) and high-frequency (alt > 50%) shares, plus a binned table. |
+| `required_queries_for_fit(a, b, n_individuals, delta, ...)` | Budget under the ascertained spectrum; `(0.5, 2.0)` at `N = 1895`, `delta = 1e-6` gives 108,898. |
+| `compare_to_fixture(a, b, n_individuals, delta, ...)` | The fitted budget beside the fixture's, and their ratio. |
+
+`python3 sfs_fit.py HIST.tsv --n-individuals N --out FIT.json` does the lot and
+writes the provenance record. `sfs_histogram.sh` is the cluster-side step.
+
 ## `make_figures.py`
 
 Six panels into `results/figures/sfs-explained.png`: what an SFS is, the
