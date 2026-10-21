@@ -15,7 +15,7 @@ python3 -m unittest discover -s analysis/simulation -t analysis/simulation
 ```
 
 ```text
-Ran 47 tests in 2.8s
+Ran 85 tests in 5.2s
 
 OK
 ```
@@ -42,7 +42,8 @@ anywhere, so there is nothing to install beyond numpy.
 | [api.md](docs/api.md) | Every public function, what it returns, and how to choose parameters |
 | [traps.md](docs/traps.md) | Three ways to get a plausible wrong answer |
 | [findings.md](docs/findings.md) | What this established in full, and what it does not |
-| [testing.md](docs/testing.md) | 47 tests, mutation checks, and why two injected defects survive on purpose |
+| [fitting-the-sfs.md](docs/fitting-the-sfs.md) | Milestone 1b: count alleles on ILIFU, fit the spectrum, and when not to trust the fit |
+| [testing.md](docs/testing.md) | 85 tests, mutation checks, and why two injected defects survive on purpose |
 
 ## The files
 
@@ -51,8 +52,10 @@ anywhere, so there is nothing to install beyond numpy.
 | `lrt.py` | The statistic. `d_n`, `theta_h0`, `theta_h1`, `lrt_statistic`, `required_queries`, `rejection_threshold`, `simulate_responses` |
 | `cohort.py` | A beacon built from genotypes. `simulate_cohort`, `beacon_answers`, `heterozygous_positions`, `attack`, `empirical_power` |
 | `contrast.py` | The spectrum sweep. `rare_fraction`, `contrast`, `budget_for_power` |
+| `sfs_fit.py` | Fits `Beta(a', b')` to a panel's allele-count histogram (zero-truncated beta-binomial) and costs the attack under it |
+| `sfs_histogram.sh` | The cluster-side step: one VCF to an allele-count table with `bcftools` |
 | `make_figures.py` | Six explanatory panels into `results/figures/` |
-| `test_*.py` | 47 tests |
+| `test_*.py` | 85 tests |
 
 ## The one-paragraph version
 
