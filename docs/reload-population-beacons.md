@@ -67,9 +67,16 @@ V6HC-S_AFR (the closed form and the fitted spectrum cover that).
 
 ## Run order
 
-**Phase 0 (ILIFU, read-only).** Read the header of one source VCF and record
-where it came from. If it is the IGSR GRCh38 re-mapping rather than the NYGC 30x
-set the project chose, stop and report.
+**Phase 0 (ILIFU, read-only), done 2026-10-21.** Gate G0 passed: the YRI source
+is the NYGC 30x high-coverage call set (`CCDG_13607_B01_GRM_WGS_2019-02-19`, on
+the GRCh38 full analysis set reference), not a lift-over. Its header records the
+cut as `view -v snps --force-samples -S extract_YRI.txt` with no `-c1`, which
+confirms the cause. Two properties of that source shaped the build script: it
+carries sites that fail VQSR (FILTER is not PASS), and about 3% of sites have
+missing genotypes (allele number below 2N; 96.7% of the first 400,000 loaded YRI
+records had AN = 216 and the rest ran down to 42). The command that read the
+header, for the record (if a source ever turns out to be the IGSR GRCh38
+re-mapping rather than the NYGC 30x set the project chose, stop and report):
 
 ```bash
 $BCFTOOLS view -h /cbio/users/arctai001/vcf_samples/snps_YRI.vcf.gz | grep -E '^##(source|reference|fileDate|bcftools_viewCommand)'
@@ -88,6 +95,14 @@ job per population:
 ```bash
 sbatch --account=b56-cbio-001-ag --job-name=popbuild --array=0-9 --cpus-per-task=2 --mem=8G --time=1-0:0:0 --output=/cbio/users/mamana/pop/build-%A_%a.out --wrap 'P=$(echo CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI | cut -d" " -f$((SLURM_ARRAY_TASK_ID+1))); bash /cbio/users/mamana/pop/build_population_dataset.sh $P /cbio/users/arctai001/vcf_samples/snps_$P.vcf.gz /cbio/users/mamana/pop/${P}_members.txt /cbio/users/mamana/pop/${P}_controls.txt /cbio/users/mamana/pop/build/$P'
 ```
+
+The build keeps only sites whose FILTER is PASS (or missing) and that have a called
+genotype for every member and control (`PASS_ONLY=1`, `REQUIRE_COMPLETE=1`, the
+defaults), so the allele number is 2N at every site. Switch either off with `0`;
+switching off `REQUIRE_COMPLETE` brings back the refusal, because a dataset whose
+allele number varies by site has no single N. Everything after the first step reads
+one cleaned file (`clean.vcf.gz`), so the member VCF, the verification lists and
+the het tables describe the same sites.
 
 `BCFTOOLS` must be exported first (see `analysis/simulation/docs/fitting-the-sfs.md`).
 Set `BEACON_REPO` and `BEACON_CONTAINER` to also run the beacon transform; leave

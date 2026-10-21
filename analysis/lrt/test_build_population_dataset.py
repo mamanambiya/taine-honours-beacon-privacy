@@ -13,6 +13,7 @@ import unittest
 HEADER = (
     "##fileformat=VCFv4.2\n"
     "##contig=<ID=chr1,length=1000000>\n"
+    '##FILTER=<ID=LowQual,Description="Failed quality control">\n'
     '##INFO=<ID=AC,Number=A,Type=Integer,Description="stale">\n'
     '##INFO=<ID=AN,Number=1,Type=Integer,Description="stale">\n'
     '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n'
@@ -221,7 +222,9 @@ class TestBuild(unittest.TestCase):
                 ("chr1", 300, "A", "G", ["1|1", "0|1", "0|0", "0|0", "0|1", "0|0"]),
             ]
         )
-        result = self.build(vcf)
+        # Dropping incomplete sites is the default (REQUIRE_COMPLETE); switching
+        # it off must bring back the refusal rather than a silent mixed-N dataset.
+        result = self.build(vcf, REQUIRE_COMPLETE="0")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("allele number", result.stderr)
 
@@ -249,6 +252,98 @@ class TestBuild(unittest.TestCase):
         )
         self.assertNotEqual(again.returncode, 0)
         self.assertIn("already exists", again.stderr)
+
+
+
+def _filtered_vcf(sites):
+    """Sites as (chrom, pos, ref, alt, genotypes, FILTER)."""
+    rows = [
+        f"{c}\t{p}\t.\t{r}\t{a}\t50\t{f}\tAC=99;AN=99\tGT\t" + "\t".join(g)
+        for c, p, r, a, g, f in sites
+    ]
+    return HEADER + "\n".join(rows) + "\n"
+
+
+# Phase 0 on ILIFU: the 1000G (NYGC 30x) source carries sites that fail VQSR, and
+# about 3% of sites have missing genotypes (allele number below 2N).
+FILTER_SITES = [
+    ("chr1", 100, "A", "G", ["0|1", "0|0", "0|0", "0|0", "0|0", "0|0"], "PASS"),
+    # fails a filter; carried by a member
+    ("chr1", 150, "C", "G", ["0|1", "0|0", "0|0", "0|0", "0|0", "0|0"], "LowQual"),
+    # fails a filter; carried by nobody
+    ("chr1", 160, "C", "A", ["0|0", "0|0", "0|0", "0|0", "0|0", "0|0"], "LowQual"),
+    # a member has a missing genotype
+    ("chr1", 200, "T", "C", ["0|.", "0|1", "0|0", "0|0", "0|0", "0|0"], "PASS"),
+    # a CONTROL has a missing genotype: still dropped, one universe for everyone
+    ("chr1", 250, "G", "T", ["0|1", "0|0", "0|0", ".|.", "0|0", "0|0"], "PASS"),
+    ("chr1", 300, "A", "G", ["1|1", "0|1", "0|0", "0|0", "0|1", "0|0"], "PASS"),
+]
+
+
+@unittest.skipUnless(shutil.which("bcftools"), "bcftools not installed")
+class TestBuildFilters(unittest.TestCase):
+    """Sites that fail a filter or have missing genotypes, as the real source has."""
+
+    helper = TestBuild
+
+    def build(self, **env):
+        t = self.helper()
+        t.build(_filtered_vcf(FILTER_SITES), **env)
+        self.addCleanup(shutil.rmtree, t.tmp, ignore_errors=True)
+        self.t = t
+        return t.result
+
+    def member_positions(self):
+        return [r[0] for r in self.t.member_records()]
+
+    def test_the_defaults_keep_only_pass_sites_with_complete_genotypes(self):
+        result = self.build()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.member_positions(), ["100", "300"])
+
+    def test_allele_number_is_then_the_same_everywhere(self):
+        self.build()
+        self.assertEqual({r[4] for r in self.t.member_records()}, {"6"})
+
+    def test_a_site_dropped_for_missing_genotypes_leaves_every_output(self):
+        self.build()
+        everything = (
+            self.t.sites("present_sites.tsv")
+            + self.t.sites("absent_sites.tsv")
+            + [s for n in ("s1", "s2", "s3", "s4", "s5", "s6")
+               for s in self.t.sites(f"het/{n}.tsv")]
+        )
+        positions = {s[1] for s in everything}
+        self.assertFalse(positions & {"150", "160", "200", "250"}, positions)
+
+    def test_a_non_pass_site_carried_by_nobody_is_not_a_known_absent_site(self):
+        # It is not in the dataset because it was filtered, not because it is
+        # a negative control the beacon should get right.
+        self.build()
+        self.assertEqual(self.t.sites("absent_sites.tsv"), [])  # 600-style sites are gone here
+
+    def test_pass_only_can_be_switched_off(self):
+        self.build(PASS_ONLY="0", REQUIRE_COMPLETE="1")
+        self.assertEqual(self.member_positions(), ["100", "150", "300"])
+
+    def test_requiring_complete_genotypes_can_be_switched_off_and_then_refuses(self):
+        result = self.build(REQUIRE_COMPLETE="0")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("allele number", result.stderr)
+
+    def test_the_summary_records_the_choices_and_the_clean_site_count(self):
+        self.build()
+        with open(os.path.join(self.t.out, "build_summary.json")) as fh:
+            summary = json.load(fh)
+        self.assertTrue(summary["pass_only"])
+        self.assertTrue(summary["require_complete_genotypes"])
+        self.assertEqual(summary["clean_sites"], 2)
+        self.assertEqual(summary["member_sites"], 2)
+
+    def test_a_bad_flag_value_is_refused(self):
+        result = self.build(PASS_ONLY="maybe")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("PASS_ONLY", result.stderr)
 
 
 if __name__ == "__main__":
