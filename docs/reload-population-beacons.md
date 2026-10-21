@@ -48,10 +48,10 @@ must return false.
 
 ## The design
 
-Per population: 40 members, 40 held-out controls, chosen by a seeded split. The
-member dataset holds only biallelic SNPs that vary in those 40 people, with allele
+Per population: 20 members, 20 held-out controls, chosen by a seeded split. The
+member dataset holds only biallelic SNPs that vary in those 20 people, with allele
 counts recomputed for them. Controls never enter the beacon, so each population
-has same-population non-members for the attack. Dataset ids are `<POP>_M40_S1`.
+has same-population non-members for the attack. Dataset ids are `<POP>_M20_S1`.
 
 ## The pieces
 
@@ -62,7 +62,7 @@ has same-population non-members for the attack. Dataset ids are `<POP>_M40_S1`.
 | `analysis/lrt/beacon_check.py` | Verifies a loaded dataset against that output: positive control, negative control, dataset scoping, members and controls |
 
 Scope limits, stated rather than hidden: biallelic SNPs only; chromosomes 20 to
-22 only; one split (`S1`); `N = 40`, which is not comparable with the 1,895 of
+22 only; one split (`S1`); `N = 20`, which is not comparable with the 1,895 of
 V6HC-S_AFR (the closed form and the fitted spectrum cover that).
 
 ## Run order
@@ -86,7 +86,7 @@ $BCFTOOLS view -h /cbio/users/arctai001/vcf_samples/snps_YRI.vcf.gz | grep -E '^
 then:
 
 ```bash
-python3 analysis/splits/make_split.py --population YRI --samples data/YRI_samples.txt --members 40 --controls 40 --seed 1 --out-dir analysis/splits
+python3 analysis/splits/make_split.py --population YRI --samples data/YRI_samples.txt --members 20 --controls 20 --seed 1 --out-dir analysis/splits
 ```
 
 **Build (ILIFU compute node).** Copy the lists and the script across, then one
@@ -109,7 +109,7 @@ Set `BEACON_REPO` and `BEACON_CONTAINER` to also run the beacon transform; leave
 them unset to build the member VCF and the lists only.
 
 **Load and verify (the dev VM).** Load each transformed dataset as the ILIFU
-guide's Route A describes, register it with `--samples 40`, flush the cache, then
+guide's Route A describes, register it with `--samples 20`, flush the cache, then
 for each population:
 
 ```bash

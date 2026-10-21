@@ -172,13 +172,13 @@ export BEACON_CONTAINER=$SIF
 for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do $BCFTOOLS query -l $SRC/snps_$P.vcf.gz > $POP/${P}_samples.txt; done
 ```
 
-Check. Expect ten lines, each at least 80:
+Check. Expect ten lines, each at least 40:
 
 ```bash
 wc -l $POP/*_samples.txt
 ```
 
-**B6. Choose 40 members and 40 held-out controls per population.** The same
+**B6. Choose 20 members and 20 held-out controls per population.** The same
 seed always gives the same split. Check `python3` works first (expect a
 version number):
 
@@ -187,7 +187,7 @@ python3 --version
 ```
 
 ```bash
-for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do python3 $POP/make_split.py --population $P --samples $POP/${P}_samples.txt --members 40 --controls 40 --seed 1 --out-dir $POP; done
+for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do python3 $POP/make_split.py --population $P --samples $POP/${P}_samples.txt --members 20 --controls 20 --seed 1 --out-dir $POP; done
 ```
 
 Check. Expect `30`:
@@ -216,7 +216,7 @@ squeue -u $USER
 ```
 
 **B8. Check the results** when the queue is empty. Each log's last line should
-read `<POP>: N sites vary in 40 members -> <POP>_M40_S1`:
+read `<POP>: N sites vary in 20 members -> <POP>_M20_S1`:
 
 ```bash
 tail -n 2 $POP/build-*.out
@@ -279,7 +279,7 @@ scp $IU@transfer.ilifu.ac.za:/cbio/users/$IU/pop/*_members.txt $IU@transfer.ilif
 ## Part D. Load them into the beacon (afrigend-all-dev)
 
 Needs the SSH alias `afrigend-all-dev`. The existing ten datasets stay where
-they are: the new ones have different ids (`<POP>_M40_S1`), and deleting the
+they are: the new ones have different ids (`<POP>_M20_S1`), and deleting the
 old ones is a separate decision.
 
 Your own computer. Copy the folders to the VM:
@@ -375,7 +375,7 @@ A=beacon-api-boolean
 doubles it and is hard to undo. Expect ten lines, all `0`:
 
 ```bash
-for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do echo -n "$P "; docker exec $M mongosh beacon_db --quiet --eval "print(db.variants.countDocuments({dataset_ids: ['${P}_M40_S1']}))"; done
+for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do echo -n "$P "; docker exec $M mongosh beacon_db --quiet --eval "print(db.variants.countDocuments({dataset_ids: ['${P}_M20_S1']}))"; done
 ```
 
 **D5. Load each population once.** Use `tmux` so a lost connection does not
@@ -402,10 +402,10 @@ beacon-docker() { docker run --rm --network host -u "$(id -u):$(id -g)" -e HOME=
 ```
 
 ```bash
-for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do beacon-docker python $TOOLS/data_import/register_dataset.py $DATA/$P/dataset.yaml --db beacon_db --mongo-uri "$MONGO_URI" --samples 40; done
+for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do beacon-docker python $TOOLS/data_import/register_dataset.py $DATA/$P/dataset.yaml --db beacon_db --mongo-uri "$MONGO_URI" --samples 20; done
 ```
 
-Expect, for each, `Registered dataset '<POP>_M40_S1' (...): N variants, 40
+Expect, for each, `Registered dataset '<POP>_M20_S1' (...): N variants, 20
 samples`, with N equal to that population's `member_sites`.
 
 **D7. Rebuild the indexes** (safe to repeat) and clear the cache:
@@ -422,7 +422,7 @@ docker exec $R redis-cli FLUSHDB
 
 Expect `OK`.
 
-**D8. Check the list.** Expect the ten new ids, each with `sampleCount` 40 and
+**D8. Check the list.** Expect the ten new ids, each with `sampleCount` 20 and
 `variantCount` equal to its `member_sites`; the ten old datasets are still
 listed:
 
@@ -434,11 +434,11 @@ curl -s http://localhost:8086/api/datasets | python3 -m json.tool
 id; this touches only that dataset) and then clear the cache:
 
 ```bash
-docker exec $M mongosh beacon_db --quiet --eval "printjson(db.variants.deleteMany({dataset_ids: ['YRI_M40_S1']}))"
+docker exec $M mongosh beacon_db --quiet --eval "printjson(db.variants.deleteMany({dataset_ids: ['YRI_M20_S1']}))"
 ```
 
 ```bash
-docker exec $M mongosh beacon_db --quiet --eval "printjson(db.datasets.deleteOne({_id: 'YRI_M40_S1'}))"
+docker exec $M mongosh beacon_db --quiet --eval "printjson(db.datasets.deleteOne({_id: 'YRI_M20_S1'}))"
 ```
 
 ```bash
