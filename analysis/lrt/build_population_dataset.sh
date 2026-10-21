@@ -14,6 +14,9 @@
 #
 # Writes, under OUTDIR (which must not exist):
 #   members.txt, controls.txt  copies of the two lists, so OUTDIR is self-contained
+#   clean.vcf.gz(.tbi)     the source cut to the members and controls, biallelic SNPs,
+#                          filtered as above: ONE site universe every later file is
+#                          taken from (an intermediate; safe to delete once verified)
 #   members.vcf.gz(.tbi)   biallelic SNPs that vary in the members; INFO AC/AN/AF
 #                          RECOMPUTED for the members, never inherited
 #   present_sites.tsv      up to N_VERIFY sites a member carries   (beacon must say yes)
@@ -38,6 +41,14 @@
 #   N_VERIFY          sites per verification list (default 100)
 #   SPLIT_TAG         label in the dataset id (default S1): POP_M<members>_S1
 #   DATASET_ID        overrides the generated id
+#   PASS_ONLY         1 (default) keeps only sites whose FILTER is PASS or missing;
+#                     0 keeps every site, including ones that failed a filter.
+#   REQUIRE_COMPLETE  1 (default) keeps only sites with a called genotype for EVERY
+#                     member and control, so the allele number is 2N at every site;
+#                     0 keeps sites with missing genotypes and then refuses to
+#                     continue, because the dataset would have no single N.
+#                     Both defaults reflect the real 1000G (NYGC 30x) source: it has
+#                     sites that fail VQSR, and about 3% of sites with missing calls.
 #   BEACON_REPO       a clone of variant-checker-beacon; when set, its
 #                     scripts/run_ilifu_pipeline.sh is run with --skip-import
 #   BEACON_CONTAINER  the tools .sif or image, passed to that script
@@ -60,6 +71,15 @@ B=${BCFTOOLS:-bcftools}
 seed=${SEED:-1}
 n_verify=${N_VERIFY:-100}
 tag=${SPLIT_TAG:-S1}
+pass_only=${PASS_ONLY:-1}
+require_complete=${REQUIRE_COMPLETE:-1}
+
+for flag in PASS_ONLY:"$pass_only" REQUIRE_COMPLETE:"$require_complete"; do
+    case ${flag#*:} in
+        0|1) ;;
+        *) echo "${flag%%:*} must be 0 or 1, got '${flag#*:}'" >&2; exit 2 ;;
+    esac
+done
 
 [ -e "$out" ] && die "output directory $out already exists; refusing to overwrite a dataset that may have been verified"
 [ -s "$members" ] || die "members list $members is missing or empty"
@@ -88,10 +108,31 @@ sample_sites() {
         | sort -k1,1 -k2,2n
 }
 
+# 0. One cleaned site universe. Everything below reads this file, never the source,
+#    so the member VCF, the verification lists and the het tables describe exactly the
+#    same sites. Filters are applied to the members AND controls together: a site with
+#    a missing call in a control is dropped too, so no output mixes universes.
+pass_args=()
+if [ "$pass_only" = 1 ]; then
+    pass_args=(-f 'PASS,.')
+fi
+clean="$out/clean.vcf.gz"
+if [ "$require_complete" = 1 ]; then
+    # Two steps on purpose: F_MISSING is evaluated on the samples of the file it
+    # reads, and `view -S ... -i` would test it BEFORE the sample cut.
+    $B view -S "$all" -m2 -M2 -v snps ${pass_args[@]+"${pass_args[@]}"} "$src" -Ou \
+        | $B view -i 'F_MISSING=0' -Oz -o "$clean"
+else
+    $B view -S "$all" -m2 -M2 -v snps ${pass_args[@]+"${pass_args[@]}"} "$src" -Oz -o "$clean"
+fi
+clean_sites=$($B view -H "$clean" | wc -l | tr -d ' ')
+[ "$clean_sites" -gt 0 ] || die "no site of ${pop} survives the filters (PASS_ONLY=${pass_only}, REQUIRE_COMPLETE=${require_complete})"
+$B index -t "$clean"
+
 # 1. The member VCF. Counts are recomputed for the members BEFORE the filter, so
 #    -c1 acts on the members' own allele counts, not on whatever the parent
 #    panel's INFO says.
-$B view -S "$members" -m2 -M2 -v snps "$src" -Ou \
+$B view -S "$members" "$clean" -Ou \
     | $B +fill-tags -Ou -- -t AN,AC,AF \
     | $B view -c1 -Oz -o "$out/members.vcf.gz"
 
@@ -110,7 +151,7 @@ zero=$($B query -f '%AC\n' "$out/members.vcf.gz" | awk '$1 == 0' | wc -l | tr -d
 $B query -f '%CHROM\t%POS\t%REF\t%ALT\n' "$out/members.vcf.gz" \
     | sample_sites > "$out/present_sites.tsv"
 
-$B view -S "$members" -m2 -M2 -v snps "$src" -Ou \
+$B view -S "$members" "$clean" -Ou \
     | $B +fill-tags -Ou -- -t AC \
     | $B view -e 'AC>0' -Ou \
     | $B query -f '%CHROM\t%POS\t%REF\t%ALT\n' \
@@ -120,9 +161,9 @@ $B view -S "$members" -m2 -M2 -v snps "$src" -Ou \
 
 # 4. Het tables, one pass over the source for members and controls together. The
 #    sample order of the genotype columns is the order of that same stream.
-names=$($B view -h -S "$all" "$src" \
+names=$($B view -h "$clean" \
     | awk -F'\t' '/^#CHROM/ { s = $10; for (i = 11; i <= NF; i++) s = s "\t" $i; print s }')
-$B view -S "$all" -m2 -M2 -v snps "$src" \
+$B view "$clean" \
     | $B query -f '%CHROM\t%POS\t%REF\t%ALT[\t%GT]\n' \
     | awk -F'\t' -v OFS='\t' -v dir="$out/het" -v names="$names" '
         BEGIN {
@@ -172,6 +213,9 @@ cat > "$out/build_summary.json" <<EOF
   "source_vcf": "${src}",
   "n_members": ${n_members},
   "n_controls": ${n_controls},
+  "pass_only": $([ "$pass_only" = 1 ] && echo true || echo false),
+  "require_complete_genotypes": $([ "$require_complete" = 1 ] && echo true || echo false),
+  "clean_sites": ${clean_sites},
   "member_sites": ${member_sites},
   "allele_number": $((2 * n_members)),
   "verification_sample_size": ${n_verify},
