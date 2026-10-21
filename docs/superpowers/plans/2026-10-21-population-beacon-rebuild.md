@@ -1,6 +1,6 @@
 # Plan: rebuild the 1000G population beacons so the attack can be run on them
 
-Reading copy: https://claude.ai/artifact/4cXTpWSM432M8AJddyttQi (this file is
+Reading copy: <https://claude.ai/artifact/4cXTpWSM432M8AJddyttQi> (this file is
 the source of truth).
 
 Taine honours repo (`taine-honours-beacon-privacy`), session 04678b, 2026-10-21.
