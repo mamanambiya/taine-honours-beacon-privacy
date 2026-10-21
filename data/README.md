@@ -35,6 +35,19 @@ Use the GRCh38-aligned high-coverage (30x) call set, or lift over and document
 the liftover — but do not mix builds between arms, because a coordinate
 mismatch produces exactly the signal this study is trying to measure.
 
+## A population cut from a larger panel
+
+A VCF cut to a subset of samples keeps every site of the parent panel, including
+the ones no sample in the subset carries. Load that into a beacon and it answers
+yes at those sites: the dataset then says "this site is in the panel", not "a
+member carries this allele", and attack power measures nothing.
+
+Cut the members' VCF with `bcftools view -S members.txt -c1` (restricted to
+biallelic SNPs, with `AN`, `AC` and `AF` recomputed for the members), and check
+the result: no record with `AC = 0`, and one allele number, `2N`, at every site.
+`analysis/lrt/build_population_dataset.sh` does this and refuses to continue
+if it cannot show it.
+
 ## Recording what you used
 
 For every dataset actually analysed, note here: the source URL or path, the

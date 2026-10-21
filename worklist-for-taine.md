@@ -163,7 +163,15 @@ Three weeks.
    served from
    [the EBI FTP site](https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/).
 2. Extract the European samples into the genotype-matrix form from task 1.
-3. Split into beacon members and controls.
+3. Split into beacon members and controls, with a seeded split
+   (`analysis/splits/make_split.py`). **Cut the members' VCF so it keeps only
+   the sites that vary in the members**: `bcftools view -S members.txt -c1`,
+   with allele counts recomputed for those people. A VCF cut to a subset of
+   samples otherwise keeps every site of the parent panel, and a beacon built
+   from it answers yes at sites no member carries, so the attack has nothing to
+   measure. This was missed on the first load of the population beacons
+   (see `docs/reload-population-beacons.md`). The controls stay out of the
+   beacon.
 4. Find the query budget identifying 95% of members at a 5% false-positive
    rate. That pair of numbers is a *power curve* point: queries on one axis,
    the fraction of members correctly identified on the other, with the
@@ -183,7 +191,12 @@ Three weeks. Most of it data preparation.
 ## Task 3 — African arm
 
 1. Apply the answer to question A before generating any curves.
-2. Build the African beacon from the 1000 Genomes African samples.
+2. Build the African beacon from the 1000 Genomes African samples, the same
+   way as the European one: members only, sites that vary in the members only.
+   Before any curve, run `analysis/lrt/beacon_check.py`. It asks the beacon
+   for sites no member carries, which must answer no, and for each member's
+   own heterozygous sites, which must all answer yes. A beacon that answers
+   yes everywhere passes every positive check and fails this one.
 3. Run the identical attack — same code, settings and false-positive rate.
 4. Compare the query counts.
 

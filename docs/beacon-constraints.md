@@ -220,6 +220,20 @@ This is the same data the beacon was loaded from, so the SFS you derive is the
 SFS the beacon's `D_N` is governed by. Never SSH to the ILIFU login node — use a
 compute node.
 
+## 9. A beacon built from part of a panel must list only what its members carry
+
+A beacon answers yes where a record exists, so every record must be a site that
+some member carries. A dataset cut from a larger panel by sample, without
+dropping the sites that do not vary in those samples, lists the whole panel and
+answers yes at sites no member carries.
+
+Measured on the first load of the 1000G population beacons on
+`afrigend-all-dev` (2026-10-21): all ten populations listed the same 6,240,864
+records, and the API answered yes at sites with an alternate allele count of
+zero. The remedy and the checks are in
+[`reload-population-beacons.md`](reload-population-beacons.md). The test that
+catches it is a negative control: a site no member carries must answer no.
+
 ## Summary of what this changes in the proposal
 
 | Proposal says | Reality | Consequence |
@@ -228,3 +242,4 @@ compute node.
 | Replicate 1000G attack | Beacon is GRCh38-only, 501s on GRCh37 | Use the GRCh38 1000G call set, not Phase 1/3 as published |
 | Matched sample size 500 | Live beacon is N=1,895 | Subsample, or model N as a covariate — otherwise ancestry and N are confounded |
 | Query with VCF positions | Storage is 0-based half-open | Convert `POS-1`; a positive control per run is mandatory |
+| Build beacons from 1000G populations | A cut by sample lists the whole panel | Keep only sites that vary in the members (`-c1`); add a negative control |
