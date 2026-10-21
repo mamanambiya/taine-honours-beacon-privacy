@@ -24,17 +24,17 @@ region slices only; the right recipe (`bcftools view -S samples.txt -c1`) sits
 in `examples/README.md` and is not taught. Guide and tutorial checks are
 positive-only. Our own `worklist-for-taine.md` task 2 has the same hole.
 
-**Outcome wanted.** Per population, one beacon dataset of 40 members built only
-from sites that vary in those 40, with 40 held-out controls whose genotypes stay
+**Outcome wanted.** Per population, one beacon dataset of 20 members built only
+from sites that vary in those 20, with 20 held-out controls whose genotypes stay
 out of the beacon, verified against genotype ground truth before any attack run.
 
 ## Design (recommended defaults, all reversible)
 
 | Choice | Default | Why |
 | --- | --- | --- |
-| Members / controls | 40 / 40 per population, seeded split | Matches the simulation's N=40; MSL (85) is the smallest, so every population can supply 80. Resolves the N confound inside the 1000G arms. |
+| Members / controls | 20 / 20 per population, seeded split | Matches the 2015 paper's design of 20 members and 20 controls (per Mamana, 2026-10-21; not re-checked against the paper here); MSL (85) is the smallest, so every population can supply 40. Resolves the N confound inside the 1000G arms. |
 | Replicates | 1 split now (`S1`); more seeds later | Keeps the first load small; add seeds if variance matters. |
-| Dataset ids | `<POP>_M40_S1` | Old ids untouched, nothing to confuse. |
+| Dataset ids | `<POP>_M20_S1` | Old ids untouched, nothing to confuse. |
 | Where | same Mongo (`beacon_db`) on `afrigend-all-dev`, new ids | New data ~2 GB (estimate from 11.4 GB / 62.4M docs); VM has 17 GB free. |
 | Old datasets | kept until every gate passes, deleted only on a separate approval | Rollback stays trivial. |
 | Scope | chr 20-22, SNPs, het sites 0/1 only | What Taine's outputs already cover. Stated as a limit. |
@@ -53,15 +53,15 @@ lift-over, stop and report before building anything.**
 
 **Phase 1 - build on ILIFU (per population, 10 times; compute node, `sbatch`).**
 
-1. Seeded split of `bcftools query -l` into `members.txt` (40) and
-   `controls.txt` (40); the lists are public sample IDs and are committed to the
+1. Seeded split of `bcftools query -l` into `members.txt` (20) and
+   `controls.txt` (20); the lists are public sample IDs and are committed to the
    repo.
 2. `bcftools view -S members.txt -c1 -Oz` (sites that vary in the members; INFO
    AC/AN recomputed), index.
-3. Run `sfs_histogram.sh` (PR #1) on that VCF with N=40. **Gate G1: "with AC =
+3. Run `sfs_histogram.sh` (PR #1) on that VCF with N=20. **Gate G1: "with AC =
    0" is 0 and its kept count equals `bcftools view -H | wc -l` of alleles.**
    The same table is the matched 1000G spectrum Milestone 1b asks for.
-4. Beacon pipeline, `--skip-import`, with `dataset.yaml` (`id: <POP>_M40_S1`,
+4. Beacon pipeline, `--skip-import`, with `dataset.yaml` (`id: <POP>_M20_S1`,
    description naming members, seed, source file, build) per the ILIFU guide
    section 4.4.
 5. Het-position tables per member and per control (chr, POS, REF, ALT; `GT=0|1
@@ -75,12 +75,12 @@ counts exceed EUR.**
 **Phase 2 - move and load (me, over ssh to `afrigend-all-dev`, after this plan
 is approved).** Copy outputs via your Mac (guide Route A; `scp` to
 `transfer.ilifu.ac.za`, MFA each time). Start the three stopped containers,
-`mongoimport` each dataset, `register_dataset.py --samples 40`, flush Redis
+`mongoimport` each dataset, `register_dataset.py --samples 20`, flush Redis
 (results are cached 5 minutes). Add `RATELIMIT_QUERY_ENDPOINT` to the instance
 env and recreate only the API container, with the compose file backed up first.
 **Gate G3: per-dataset `countDocuments` equals the Phase 1 count; no dataset
 loaded twice (the guide's double-load warning); `/api/datasets` shows 10 new ids
-with `sampleCount=40`.**
+with `sampleCount=20`.**
 
 **Phase 3 - verify against truth (me, new harness in this repo).**
 
@@ -94,12 +94,12 @@ with `sampleCount=40`.**
 
 **Phase 4 (not in this approval).** Run the M2/M3 power curves from genotype
 answers, fitting `(a', b')` per population with `sfs_fit.py`; report
-queries-to-95%-power, AFR versus EUR, matched at N=40.
+queries-to-95%-power, AFR versus EUR, matched at N=20.
 
 ## Files (Taine repo, one feature branch and PR, tests first)
 
 - `analysis/splits/make_split.py`, with `test_make_split.py`: deterministic,
-  disjoint, sizes exact, seed recorded; edge cases: population smaller than 80,
+  disjoint, sizes exact, seed recorded; edge cases: population smaller than 40,
   duplicate IDs, empty list.
 - `analysis/splits/<POP>_members.txt`, `<POP>_controls.txt` (public IDs).
 - `analysis/lrt/build_population_dataset.sh`: Phase 1 steps 1-6 in one
