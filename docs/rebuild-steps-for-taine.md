@@ -360,6 +360,15 @@ same value instead:
 echo 'RATELIMIT_QUERY_ENDPOINT=1000000/hour' >> .env.boolean
 ```
 
+There is a second limit, `RATELIMIT_DEFAULT` (100/hour), for every other
+endpoint (`/api/datasets` and the rest). Without raising it too, a plain
+`curl http://localhost:8086/api/datasets` after a verification run answers
+`{"detail": "Request was throttled."}`. Edit that line the same way:
+
+```bash
+sed -i 's|^RATELIMIT_DEFAULT=.*|RATELIMIT_DEFAULT=1000000/hour|' .env.boolean
+```
+
 This setting only lifts the limit if the API was built from beacon repo pull
 request 134 (or later). Before that fix the query endpoint kept a hardcoded
 `50/hour` and answered HTTP 429 after 50 queries whatever this variable said
