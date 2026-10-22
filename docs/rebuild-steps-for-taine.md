@@ -236,15 +236,16 @@ line.
 **B9. Find the transformed files and compress them** (the load file is big):
 
 ```bash
-ls -l $POP/build/YRI/beacon
+ls -l $POP/build/YRI/beacon/vcf_output
 ```
 
 Expect `variants_batch.jsonl` and `individuals.json` under
-`$POP/build/YRI/beacon`. If the names or the folder differ, stop and tell Mamana.
+`$POP/build/YRI/beacon/vcf_output`. If the names or the folder differ, stop
+and tell Mamana.
 Otherwise:
 
 ```bash
-for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do gzip -v $POP/build/$P/beacon/variants_batch.jsonl; done
+for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do gzip -v $POP/build/$P/beacon/vcf_output/variants_batch.jsonl; done
 ```
 
 **ROLLBACK:** not part of the steps above. It removes one population's build so
@@ -309,6 +310,19 @@ cd ~/variant-checker-beacon
 
 ```bash
 docker compose -f compose/docker-compose.dev.yml up -d --build mongodb redis beacon-api
+```
+
+The API container runs as the user `beacon` and writes its log to `./logs`. If
+`beacon-api-boolean` stays `unhealthy` and `docker logs beacon-api-boolean`
+shows `PermissionError: ... /app/logs/beacon.log`, that folder is not writable
+by it. Fix it, then restart the API:
+
+```bash
+chmod 777 logs
+```
+
+```bash
+docker compose -f compose/docker-compose.dev.yml restart beacon-api
 ```
 
 Expect `beacon-dev-mongodb`, `beacon-dev-redis` and `beacon-api-boolean`, each
@@ -384,7 +398,14 @@ equal that population's `member_sites` from Part B (see
 `~/pop_build/<POP>/build_summary.json`):
 
 ```bash
-zcat ~/pop_build/YRI/beacon/variants_batch.jsonl.gz | docker exec -i $M mongoimport --db beacon_db --collection variants --type json --file /dev/stdin
+zcat ~/pop_build/YRI/beacon/vcf_output/variants_batch.jsonl.gz | docker exec -i $M mongoimport --db beacon_db --collection variants --type json --file /dev/stdin
+```
+
+If that population's file was not compressed (the name has no `.gz`), read it
+with `cat` instead of `zcat`:
+
+```bash
+cat ~/pop_build/YRI/beacon/vcf_output/variants_batch.jsonl | docker exec -i $M mongoimport --db beacon_db --collection variants --type json --file /dev/stdin
 ```
 
 Expect `N document(s) imported successfully. 0 document(s) failed to import.`
