@@ -315,10 +315,11 @@ docker compose -f compose/docker-compose.dev.yml up -d --build mongodb redis bea
 The API container runs as the user `beacon` and writes its log to `./logs`. If
 `beacon-api-boolean` stays `unhealthy` and `docker logs beacon-api-boolean`
 shows `PermissionError: ... /app/logs/beacon.log`, that folder is not writable
-by it. Fix it, then restart the API:
+by it. The folder and the existing `beacon.log` inside it both need to be
+writable by it. Fix them, then restart the API:
 
 ```bash
-chmod 777 logs
+chmod -R a+rwX logs
 ```
 
 ```bash
@@ -359,10 +360,20 @@ same value instead:
 echo 'RATELIMIT_QUERY_ENDPOINT=1000000/hour' >> .env.boolean
 ```
 
-Recreate only the API container:
+This setting only lifts the limit if the API was built from beacon repo PR
+#134 (or later). Before that fix the query endpoint kept a hardcoded
+`50/hour` and answered HTTP 429 after 50 queries whatever this variable said
+("Expected available in 3593 seconds"). Check that the file you are building
+from has it, and rebuild the image:
 
 ```bash
-docker compose -f compose/docker-compose.dev.yml up -d --force-recreate --no-deps beacon-api
+grep -n 'def get_rate' beacon_api/views_boolean.py
+```
+
+Expect one line. Then recreate only the API container:
+
+```bash
+docker compose -f compose/docker-compose.dev.yml up -d --build --force-recreate --no-deps beacon-api
 ```
 
 Expect `1000000/hour`:
