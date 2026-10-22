@@ -74,4 +74,10 @@ $bcftools_cmd view ${type_args[@]+"${type_args[@]}"} $view_args "$vcf" \
             close("sort -n")
             printf "kept %d ALT alleles; skipped %d at sites with AN != %d, " \
                    "%d with AC = 0\n", kept, wrong_an, two_n, zero > "/dev/stderr"
+            if (kept == 0) {
+                print "sfs_histogram: no ALT allele was counted, so there is " \
+                      "nothing to fit (wrong N, an empty region, or bcftools " \
+                      "produced no records; check the messages above)" > "/dev/stderr"
+                exit 1
+            }
         }' > "$out"

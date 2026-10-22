@@ -416,6 +416,16 @@ class TestExtractionScript(unittest.TestCase):
         result, table = self.run_script(n_individuals=4)
         self.assertEqual(table, "")
         self.assertIn("kept 0 ALT alleles", result.stderr)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("no ALT allele was counted", result.stderr)
+
+    def test_a_bcftools_that_cannot_run_is_a_failure_not_an_empty_table(self):
+        # On ILIFU a container the user may not run (FATAL: singularity image
+        # is not owned by required user(s)) printed three FATAL lines and then
+        # "kept 0 ALT alleles", which reads like a quiet region.
+        result, table = self.run_script(BCFTOOLS="false")
+        self.assertEqual(table, "")
+        self.assertNotEqual(result.returncode, 0)
 
     def test_refuses_a_non_numeric_n(self):
         result, _ = self.run_script(n_individuals="five")
