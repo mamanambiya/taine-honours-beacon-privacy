@@ -360,8 +360,8 @@ same value instead:
 echo 'RATELIMIT_QUERY_ENDPOINT=1000000/hour' >> .env.boolean
 ```
 
-This setting only lifts the limit if the API was built from beacon repo PR
-#134 (or later). Before that fix the query endpoint kept a hardcoded
+This setting only lifts the limit if the API was built from beacon repo pull
+request 134 (or later). Before that fix the query endpoint kept a hardcoded
 `50/hour` and answered HTTP 429 after 50 queries whatever this variable said
 ("Expected available in 3593 seconds"). Check that the file you are building
 from has it, and rebuild the image:
