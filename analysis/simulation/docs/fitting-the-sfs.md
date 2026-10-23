@@ -146,14 +146,53 @@ of the plumbing, not of the method, and a reminder that the truncation has to
 match how the sites were chosen. For V6HC-S_AFR itself the sites are those
 polymorphic in the panel, which is the case the model assumes.
 
+## `D_N` without a Beta
+
+`empirical_dn.empirical_d_n(histogram, N, n)` treats the panel's own sites as the
+population: for a target heterozygous at a site with `k` of the panel's `M = 2N`
+haplotypes, it asks how often none of a beacon of `n` other people carries the
+allele. Under random pairing the weight of a `k`-copy site is
+`2k(M-k) / (M(M-1))`, and the chance the beacon's `2n` haplotypes, drawn from the
+`M - 2` that are not the target's, all miss the allele is
+`C(M-1-k, 2n) / C(M-2, 2n)`. `D_N` is the weighted mean over the histogram.
+
+- **No zero-bin needed.** The weight is zero at `k = 0` and `k = M`, so the
+  `K = 0` mass the Beta has to model never enters.
+- **Unbiased for the quantity `lrt.d_n` integrates.** Haplotypes drawn without
+  replacement from iid draws are iid, so given a frequency `f` the expected
+  miss probability is `(1 - f)^(2n)`. It reproduces the Beta answer when the
+  Beta is right, and follows the data when it is not (`test_empirical_dn.py`).
+- **Beacon size.** At most `N - 1`: the target and the beacon are different
+  people from the same panel.
+- **What it still assumes.** Hardy-Weinberg pairing (the histogram cannot check
+  it), independence between sites, and unrelated panel samples. Relatedness or
+  population structure inside the panel would make the panel's haplotypes
+  correlated, so the miss probability would be too optimistic or pessimistic by
+  an amount this module cannot see.
+
+`sfs_fit.py --beacon-sizes 20,65,500,1000` prints and records the figures beside
+the Beta's. Run on the full V6HC-S_AFR table (42,331,932 variants, `N = 1895`),
+whose Beta fit sat on the bound (`at_boundary = true`):
+
+| Beacon | `D_N` (histogram) | Queries, 95% power (histogram) | Queries (Beta fit, at the bound) |
+| --- | --- | --- | --- |
+| 20 | 0.0824 | 31 | 41 |
+| 65 | 0.0338 | 78 | 131 |
+| 500 | 0.0067 | 404 | 1,004 |
+| 1,000 | 0.0032 | 851 | 2,009 |
+
+`delta = 1e-6`, `alpha = 0.05`. The histogram column is the one to quote for this
+panel; the Beta column is a bound. The "3,810 queries" the fit printed for a
+beacon the size of the whole panel is not a usable figure and has no
+histogram counterpart, since a beacon cannot be as large as its own panel.
+
 ## Limits
 
 - **One Beta is an approximation.** A neutral spectrum falls as `1/f`, which a
   Beta reaches only as `a' -> 0`. If the fit sits near the lower bound on the
-  real panel, that is the shape of the data, and the next step is a
-  non-parametric `D_N` taken straight from the histogram rather than a better
-  optimiser. The diagnostics' binned table (`diagnostics.bins`) is the starting
-  point.
+  real panel, that is the shape of the data, and the answer is `D_N` taken
+  straight from the histogram ([below](#d_n-without-a-beta)), not a better
+  optimiser. On V6HC-S_AFR the fit did sit on the bound.
 - **The standard errors are from a finite-difference Hessian** and assume the
   model is right. They say how well a Beta is pinned down, not whether a Beta is
   the right shape.

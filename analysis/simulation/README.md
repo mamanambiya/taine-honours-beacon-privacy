@@ -53,9 +53,10 @@ anywhere, so there is nothing to install beyond numpy.
 | `cohort.py` | A beacon built from genotypes. `simulate_cohort`, `beacon_answers`, `heterozygous_positions`, `attack`, `empirical_power` |
 | `contrast.py` | The spectrum sweep. `rare_fraction`, `contrast`, `budget_for_power` |
 | `sfs_fit.py` | Fits `Beta(a', b')` to a panel's allele-count histogram (zero-truncated beta-binomial) and costs the attack under it |
+| `empirical_dn.py` | `D_N` and the query budget taken straight from the histogram, with no Beta: for panels where `sfs_fit.py` reports `at_boundary` |
 | `sfs_histogram.sh` | The cluster-side step: one VCF to an allele-count table with `bcftools` |
 | `make_figures.py` | Six explanatory panels into `results/figures/` |
-| `test_*.py` | 85 tests |
+| `test_*.py` | 106 tests |
 
 ## The one-paragraph version
 

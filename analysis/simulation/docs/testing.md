@@ -20,6 +20,21 @@ invariances rather than coverage gaps, and both are now asserted explicitly in
 A mutation that survives is a finding about the model. It is not a licence to
 tighten the test until it fails.
 
+## `test_empirical_dn.py`
+
+20 tests. The estimate is pinned three ways: against exact fractions worked out
+by hand on a six-haplotype panel; against the het-conditioned Beta `D_N` when the
+data really are Beta (within 1%); and, the reason the module exists, against the
+simulated truth on a two-population spectrum a single Beta cannot describe, where
+the empirical error must be under a third of the Beta fit's. Edge tests fix the
+limits: all singletons give `D_N = 1`, all sites at `M - 1` give 0, and the empty
+`K = 0` and `K = M` bins carry no weight.
+
+Four mutations were injected into `empirical_dn.py` and each was caught: the
+Hardy-Weinberg heterozygosity weight dropped, the haplotype pool taken as `M`
+instead of `M - 2` (the target's two haplotypes not removed), the
+`beacon <= N - 1` guard dropped, and the pool in the denominator changed.
+
 ## `test_sfs_fit.py`
 
 38 tests, added with Milestone 1b. The fit is checked by **recovering a known
