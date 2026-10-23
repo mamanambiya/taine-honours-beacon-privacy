@@ -70,15 +70,25 @@ cohorts is only interpretable if both arms' provenance is pinned.
 | Table | `/cbio/users/mamana/sfs/v6hc_s_afr.tsv`, copied to the author's Mac; 667,077 bytes, `sha256 df1febf6173d4c771694636fee30754d4b25a70da6fda6bb1b6a8dac11bcc992` |
 | Fit record | `results/tables/sfs_fit_v6hc_s_afr.json` (gitignored; regenerate with the command in `analysis/simulation/docs/fitting-the-sfs.md`) |
 
-**Not recorded, and why it matters.** The per-chromosome "skipped sites with
-`AN != 3790`" counts were written to the merge job's log and have not been read
-back, so it is not shown that no site was dropped. A slice test on
-`chr22:16,000,000-17,000,000` kept 9,383 ALT alleles and skipped 0. `bcftools`
-also warned that the `.tbi` index is older than the VCF it indexes; region reads
-worked, but a chromosome with a low count would be the first thing to check. The
-42,331,932 total equals the variant count in the table at the top of this file;
-whether the two were counted the same way (SNPs only against all records) was not
-checked.
+**Checked 2026-10-23 (merge job log).** All 22 chromosomes report
+`skipped 0 at sites with AN != 3790` and `0 with AC = 0`, so no site was dropped
+for missing genotypes and no record without a carrier was counted. The 22 per-chromosome
+`kept` counts (chr1 3,346,708 through chr21 560,238) sum to 42,331,932, the same
+total the fit read from the merged table. A slice test on
+`chr22:16,000,000-17,000,000` kept 9,383 ALT alleles.
+
+**Index warning traced (read-only, 2026-10-23).** On all 22 chromosomes the
+`.tbi` is older than its VCF by 35 seconds to about 3 minutes (for example
+chr22: VCF 2026-03-23 15:30:43, index 15:30:08). The warning is therefore a
+property of how the panel was written, not of one file. The histogram runs
+read each chromosome end to end without `-r`, which does not need the index
+(standard `bcftools` behaviour, not re-tested here), and every chromosome's
+counts are consistent with the allele number, so the counts do not depend on
+it. Region queries (`-r`) do use the index and are the thing to distrust.
+
+**Still not checked.** The 42,331,932 total equals the variant count in the table
+at the top of this file; whether the two were counted the same way (SNP ALT
+alleles against all records) was not checked.
 
 **What the fit says.** The single-Beta fit sits on its search bound
 (`a' = exp(-7)`, `at_boundary = true`), so its parameters and its query budget are
