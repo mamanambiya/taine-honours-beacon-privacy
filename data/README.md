@@ -77,11 +77,18 @@ for missing genotypes and no record without a carrier was counted. The 22 per-ch
 total the fit read from the merged table. A slice test on
 `chr22:16,000,000-17,000,000` kept 9,383 ALT alleles.
 
-**Still not checked.** `bcftools` warned that the `.tbi` index is older than the
-VCF it indexes; region reads worked and every chromosome's counts are consistent,
-but the warning was not traced to a cause. The 42,331,932 total equals the variant
-count in the table at the top of this file; whether the two were counted the same
-way (SNP ALT alleles against all records) was not checked.
+**Index warning traced (read-only, 2026-10-23).** On all 22 chromosomes the `.tbi` is
+older than its VCF by 35 seconds to about 3 minutes (for example chr22: VCF
+2026-03-23 15:30:43, index 15:30:08), so the warning is a property of how the panel
+was written, not of one file. The histogram runs read each chromosome end to end
+without `-r`, which does not need the index (standard `bcftools` behaviour, not
+re-tested here), and every chromosome's counts are consistent with the allele
+number, so the counts do not depend on it. Region queries (`-r`) do use the index
+and would be the thing to distrust.
+
+**Still not checked.** The 42,331,932 total equals the variant count in the table
+at the top of this file; whether the two were counted the same way (SNP ALT
+alleles against all records) was not checked.
 
 **What the fit says.** The single-Beta fit sits on its search bound
 (`a' = exp(-7)`, `at_boundary = true`), so its parameters and its query budget are
