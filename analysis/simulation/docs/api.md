@@ -80,6 +80,20 @@ numpy only. Full walk-through, including the ILIFU step: [fitting-the-sfs.md](fi
 `python3 sfs_fit.py HIST.tsv --n-individuals N --out FIT.json` does the lot and
 writes the provenance record. `sfs_histogram.sh` is the cluster-side step.
 
+## `empirical_dn.py` — `D_N` from the histogram, no Beta
+
+numpy only. For a panel whose Beta fit sits on its search bound
+(`at_boundary = true`), this is the number to use. Derivation and caveats:
+[fitting-the-sfs.md](fitting-the-sfs.md#d_n-without-a-beta).
+
+| Function | |
+| --- | --- |
+| `empirical_d_n(histogram, panel_individuals, n_beacon)` | `P(no beacon member carries the allele \| target heterozygous there)`, the same quantity as `lrt.d_n(a, b, n, heterozygous=True)`. Needs `n_beacon <= panel_individuals - 1`; refuses a wrong-length or negative histogram and one with no site a target could be heterozygous at. |
+| `required_queries_empirical(histogram, panel_individuals, n_beacon, delta, ...)` | Budget from the histogram's own `D_N` and `D_(N-1)`. |
+
+`sfs_fit.py` now writes an `empirical_d_n` block (one row per `--beacon-sizes`,
+default 20 and 65 where the panel is large enough) beside the Beta's figures.
+
 ## `make_figures.py`
 
 Six panels into `results/figures/sfs-explained.png`: what an SFS is, the

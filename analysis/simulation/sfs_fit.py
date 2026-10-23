@@ -28,6 +28,7 @@ import sys
 
 import numpy as np
 
+import empirical_dn
 import lrt
 
 __all__ = [
@@ -38,6 +39,7 @@ __all__ = [
     "diagnostics",
     "required_queries_for_fit",
     "compare_to_fixture",
+    "empirical_comparison",
     "FIXTURE",
 ]
 
@@ -48,6 +50,9 @@ FIXTURE = (0.5, 2.0)
 # real spectrum; a result touching either end is a bound, not an estimate.
 _LOG_BOUND = 7.0
 _BOUNDARY_TOLERANCE = 0.05
+
+# Beacon sizes reported by default: the 2015 paper's 65, and this study's 20.
+_DEFAULT_BEACON_SIZES = (20, 65)
 
 _lgamma = np.vectorize(math.lgamma, otypes=[float])
 
@@ -403,6 +408,48 @@ def compare_to_fixture(
     }
 
 
+def empirical_comparison(
+    histogram, a, b, panel_individuals, beacon_sizes, delta, alpha=0.05, power=0.95
+):
+    """``D_N`` and the query budget straight from the histogram, beside the Beta's.
+
+    One row per beacon size. ``beta_fit_queries`` is what the fitted ``Beta(a,
+    b)`` predicts at the same size; when ``at_boundary`` is true that column is
+    a bound, and the empirical column is the one to quote.
+    """
+    rows = []
+    for n_beacon in beacon_sizes:
+        d_n = empirical_dn.empirical_d_n(histogram, panel_individuals, n_beacon)
+        d_n_minus_1 = empirical_dn.empirical_d_n(
+            histogram, panel_individuals, n_beacon - 1
+        )
+        rows.append(
+            {
+                "n_beacon": n_beacon,
+                "d_n": d_n,
+                "d_n_minus_1": d_n_minus_1,
+                "queries": lrt.required_queries(d_n, d_n_minus_1, delta, alpha, power),
+                "beta_fit_d_n": lrt.d_n(a, b, n_beacon, heterozygous=True),
+                "beta_fit_queries": required_queries_for_fit(
+                    a, b, n_beacon, delta, alpha, power
+                ),
+            }
+        )
+    return rows
+
+
+def _beacon_sizes(text):
+    try:
+        sizes = [int(part) for part in text.split(",") if part.strip()]
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expected integers like 20,65, got {text!r}")
+    if not sizes or any(s < 2 for s in sizes):
+        raise argparse.ArgumentTypeError(
+            "beacon sizes must be at least 2 (D_(N-1) needs a beacon of N - 1 >= 1)"
+        )
+    return sizes
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Fit Beta(a, b) to an allele-count histogram and cost the "
@@ -427,11 +474,25 @@ def main(argv=None):
     parser.add_argument(
         "--label", default="", help="what this panel is, recorded in the output"
     )
+    parser.add_argument(
+        "--beacon-sizes",
+        type=_beacon_sizes,
+        default=None,
+        help="beacon sizes N at which to report the histogram's own D_N and "
+        "query budget (comma separated, each at most panel N - 1). Default: "
+        "20 and 65 where the panel is large enough; a size you ask for that "
+        "does not fit is an error",
+    )
     parser.add_argument("--delta", type=float, default=1e-6)
     parser.add_argument("--alpha", type=float, default=0.05)
     parser.add_argument("--power", type=float, default=0.95)
     parser.add_argument("--out", help="write the JSON record here")
     args = parser.parse_args(argv)
+
+    if args.beacon_sizes is None:
+        args.beacon_sizes = [
+            s for s in _DEFAULT_BEACON_SIZES if s <= args.n_individuals - 1
+        ]
 
     hist = read_histogram(args.histogram, args.n_individuals)
     fit = fit_beta_binomial(hist, args.n_individuals, args.min_count)
@@ -446,6 +507,16 @@ def main(argv=None):
         ),
         "fixture_comparison": compare_to_fixture(
             fit["a"], fit["b"], args.n_individuals, args.delta, args.alpha, args.power
+        ),
+        "empirical_d_n": empirical_comparison(
+            hist,
+            fit["a"],
+            fit["b"],
+            args.n_individuals,
+            args.beacon_sizes,
+            args.delta,
+            args.alpha,
+            args.power,
         ),
     }
 
@@ -474,6 +545,15 @@ def main(argv=None):
         f"{comparison['fixture_queries']:,} fixture "
         f"(x{comparison['ratio_fitted_to_fixture']:.3g})"
     )
+
+    if record["empirical_d_n"]:
+        print("  D_N from the histogram itself (no Beta), het-conditioned:")
+    for row in record["empirical_d_n"]:
+        print(
+            f"    beacon {row['n_beacon']:,}: D_N = {row['d_n']:.4f}, "
+            f"{row['queries']:,} queries for {args.power:.0%} power "
+            f"(Beta fit: {row['beta_fit_queries']:,})"
+        )
 
     if args.out:
         with open(args.out, "w") as fh:
