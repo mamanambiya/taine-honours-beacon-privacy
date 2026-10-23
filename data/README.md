@@ -79,12 +79,12 @@ total the fit read from the merged table. A slice test on
 
 **Index warning traced (read-only, 2026-10-23).** On all 22 chromosomes the
 `.tbi` is older than its VCF by 35 seconds to about 3 minutes (for example
-chr22: VCF 2026-03-23 15:30:43, index 15:30:08), so the warning is a property of how the panel
-was written, not of one file. The histogram runs read each chromosome end to end
-without `-r`, which does not need the index (standard `bcftools` behaviour, not
-re-tested here), and every chromosome's counts are consistent with the allele
-number, so the counts do not depend on it. Region queries (`-r`) do use the index
-and would be the thing to distrust.
+chr22: VCF 2026-03-23 15:30:43, index 15:30:08). The warning is therefore a
+property of how the panel was written, not of one file. The histogram runs
+read each chromosome end to end without `-r`, which does not need the index
+(standard `bcftools` behaviour, not re-tested here), and every chromosome's
+counts are consistent with the allele number, so the counts do not depend on
+it. Region queries (`-r`) do use the index and are the thing to distrust.
 
 **Still not checked.** The 42,331,932 total equals the variant count in the table
 at the top of this file; whether the two were counted the same way (SNP ALT
