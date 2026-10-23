@@ -54,3 +54,43 @@ For every dataset actually analysed, note here: the source URL or path, the
 release/version string, the date retrieved, the sample count after any
 filtering, and the checksum if one is published. A power comparison between
 cohorts is only interpretable if both arms' provenance is pinned.
+
+## Analysed datasets
+
+### V6HC-S_AFR allele-count histogram (2026-10-23)
+
+| | |
+| --- | --- |
+| Source | `/cbio/dbs/refpanels/h3a_reference_panels/version_6/v6hc_s_african/V6HC-S_AFR/vcfs/V6HC-S_AFR_chr{1..22}_all.vcf.gz`, GRCh38, autosomes |
+| Release | `version_6` (the path's own label; no other release string was read) |
+| Samples | 1,895 (`N`; allele number `2N = 3790`) |
+| Counted | alternate alleles of biallelic and multi-allelic **SNPs** (`VTYPES=snps`), one entry per ALT allele, counts recomputed from genotypes with `bcftools +fill-tags`; no `-f PASS` filter |
+| Result | 42,331,932 ALT alleles in total, 83,379 table rows across the 22 chromosomes (counts repeat per chromosome; `sfs_fit.py` sums them) |
+| Tool | `analysis/simulation/sfs_histogram.sh` at `d5920f9`, `bcftools` from `beacon-tools.sif`, one Slurm array task per chromosome (array job 14452681, merge job 14452682) on ILIFU compute nodes |
+| Table | `/cbio/users/mamana/sfs/v6hc_s_afr.tsv`, copied to the author's Mac; 667,077 bytes, `sha256 df1febf6173d4c771694636fee30754d4b25a70da6fda6bb1b6a8dac11bcc992` |
+| Fit record | `results/tables/sfs_fit_v6hc_s_afr.json` (gitignored; regenerate with the command in `analysis/simulation/docs/fitting-the-sfs.md`) |
+
+**Not recorded, and why it matters.** The per-chromosome "skipped sites with
+`AN != 3790`" counts were written to the merge job's log and have not been read
+back, so it is not shown that no site was dropped. A slice test on
+`chr22:16,000,000-17,000,000` kept 9,383 ALT alleles and skipped 0. `bcftools`
+also warned that the `.tbi` index is older than the VCF it indexes; region reads
+worked, but a chromosome with a low count would be the first thing to check. The
+42,331,932 total equals the variant count in the table at the top of this file;
+whether the two were counted the same way (SNPs only against all records) was not
+checked.
+
+**What the fit says.** The single-Beta fit sits on its search bound
+(`a' = exp(-7)`, `at_boundary = true`), so its parameters and its query budget are
+not to be quoted. `D_N` taken straight from the histogram
+(`analysis/simulation/empirical_dn.py`, PR #9), target heterozygous, `delta = 1e-6`,
+`alpha = 0.05`, 95% power:
+
+| Beacon size | `D_N` | Queries |
+| --- | --- | --- |
+| 20 | 0.0824 | 31 |
+| 65 | 0.0338 | 78 |
+| 500 | 0.0067 | 404 |
+| 1,000 | 0.0032 | 851 |
+
+It assumes Hardy-Weinberg pairing, independent sites and unrelated panel samples.
