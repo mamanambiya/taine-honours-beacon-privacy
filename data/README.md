@@ -68,7 +68,7 @@ cohorts is only interpretable if both arms' provenance is pinned.
 | Result | 42,331,932 ALT alleles in total, 83,379 table rows across the 22 chromosomes (counts repeat per chromosome; `sfs_fit.py` sums them) |
 | Tool | `analysis/simulation/sfs_histogram.sh` at `d5920f9`, `bcftools` from `beacon-tools.sif`, one Slurm array task per chromosome (array job 14452681, merge job 14452682) on ILIFU compute nodes |
 | Table | `/cbio/users/mamana/sfs/v6hc_s_afr.tsv`, copied to the author's Mac; 667,077 bytes, `sha256 df1febf6173d4c771694636fee30754d4b25a70da6fda6bb1b6a8dac11bcc992` |
-| Fit record | `results/tables/sfs_fit_v6hc_s_afr.json` (gitignored; regenerate with the command in `analysis/simulation/docs/fitting-the-sfs.md`) |
+| Fit record | `results/tables/sfs_fit_v6hc_s_afr.json` (gitignored; the numbers are copied below; regenerate with the command in `analysis/simulation/docs/fitting-the-sfs.md`). Fitted locally on the author's Mac from the table above (its sha256 was re-read on 2026-10-27 and matches); not an ILIFU run, only the histogram step was |
 
 **Checked 2026-10-23 (merge job log).** All 22 chromosomes report
 `skipped 0 at sites with AN != 3790` and `0 with AC = 0`, so no site was dropped
@@ -89,6 +89,28 @@ it. Region queries (`-r`) do use the index and are the thing to distrust.
 **Still not checked.** The 42,331,932 total equals the variant count in the table
 at the top of this file; whether the two were counted the same way (SNP ALT
 alleles against all records) was not checked.
+
+**Fit record, copied from the JSON (2026-10-23 14:50).** Zero-truncated
+beta-binomial, `N = 1895`, `min_count = 1`, 42,331,932 variants:
+`a' = 0.000912` (se 1.7e-7), `b' = 1.715` (se 6.0e-4), log-likelihood
+-207,390,462.8. `converged = true` and `at_boundary = true`: the optimiser
+stopped, but on the lower search bound for `a'`, so this is a boundary
+solution, not an interior optimum. **The fit is poor** and must not be quoted
+as a description of the panel:
+
+| Count bin | Observed | Fitted |
+| --- | --- | --- |
+| singletons (k = 1) | 4,542,441 | 5,258,158 |
+| doubletons (k = 2) | 6,774,109 | 2,630,980 |
+| k = 3 | 3,395,856 | 1,754,455 |
+| fraction with k <= 3 ("rare") | 0.688 | 0.522 |
+| fraction singletons | 0.107 | 0.124 |
+| top bin (k 2985 to 3790) | 639,156 | 252,131 |
+
+The panel has far more doubletons and rare alleles than any single Beta
+reproduces, and the fitted shape under-predicts the high-frequency tail. The
+fit's query figure (3,810 for `delta = 1e-6`, 0.035 of the fixture's 108,898)
+is therefore unreliable; use the histogram-based `D_N` table below instead.
 
 **What the fit says.** The single-Beta fit sits on its search bound
 (`a' = exp(-7)`, `at_boundary = true`), so its parameters and its query budget are
