@@ -110,6 +110,41 @@ unrelated people; whether the 501 and 503 are all unrelated was not checked.
 The attack-simulation power (as opposed to this closed-form budget) at n = 65
 has not been run on the loaded datasets.
 
+### Relatedness and sample overlap in the loaded datasets (2026-10-27)
+
+**Relatedness.** The `D_N` budgets above assume unrelated people, and the NYGC
+metadata cannot show it (every `FamilyID` equals the sample id). So kinship was
+estimated from genotypes: `plink 1.9 --genome` within each cohort on common
+biallelic SNPs, complete genotypes, every 10th site then LD-pruned (15,621 AFR
+and 6,793 EUR SNPs). Pairs with `PI_HAT` of 0.2 or more:
+
+| Pair | `PI_HAT` | Dataset roles |
+| --- | --- | --- |
+| NA19331, NA19334 | 0.61 (Z1 0.51, Z2 0.35) | NA19334 is an LWK member; NA19331 is an LWK **control** and a pooled AFR member |
+| HG03484, HG03464 | 0.31 | both MSL members |
+| HG00116, HG00120 | 0.27 | both GBR members |
+
+That is one first-degree-like pair in 501 AFR samples and none in 503 EUR; 56
+AFR and 544 EUR pairs sit at 0.1 to 0.2. The 0.1 to 0.2 band is not evidence of
+close kin: the cohorts pool five sub-populations, which inflates `PI_HAT`, and
+only a few thousand SNPs were used. Effect on the figures above: negligible
+for `D_N` (three close pairs among about 1,000 people). It matters for one
+control: NA19331 is a control for the LWK dataset but a close relative of an
+LWK member, so a query for that person is not an independent non-member. Not
+done: replacing that control, or excluding the three pairs and rebuilding LWK,
+MSL, GBR and the pooled sets (about 4 hours of builds plus reload).
+
+**Pooled datasets overlap the populations' controls.** The pooled `AFR` and
+`EUR` members were drawn to be disjoint from every population *member* (so the
+importer cannot collide on a sample id), but not from the populations'
+*controls*, which are not loaded: 38 of the 65 AFR members and 41 of the 65
+EUR members are controls of a population dataset. Each dataset's controls are
+checked only against its own beacon, so nothing is wrong inside one beacon;
+do not use a population's controls as non-members of the pooled beacon, or the
+reverse, without removing the overlap first. Pooled controls are disjoint from
+all population members (0), and 11 AFR and 12 EUR pooled controls are also
+population controls.
+
 ### V6HC-S_AFR allele-count histogram (2026-10-23)
 
 | | |
