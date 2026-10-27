@@ -5,5 +5,12 @@
   "n_controls": 20,
   "n_input_samples": 99,
   "input_sha256": "95d6866c4cd39a0a4f54a0e7c606dc8d8cd8a27747ff7ae0753f36cfedb717d3",
-  "samples_file": "LWK_samples.txt"
+  "samples_file": "LWK_samples.txt",
+  "control_replaced": {
+    "removed": "NA19331",
+    "added": "NA19445",
+    "reason": "NA19331 is a close relative (PI_HAT 0.61, plink --genome) of LWK member NA19334; the replacement is a seeded draw (Random(1) shuffle) among LWK samples outside the split with no PI_HAT of 0.1 or more against any LWK member or control",
+    "date": "2026-10-27",
+    "note": "make_split.py with the same seed still returns NA19331; this file is the one used"
+  }
 }

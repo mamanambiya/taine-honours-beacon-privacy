@@ -120,7 +120,7 @@ and 6,793 EUR SNPs). Pairs with `PI_HAT` of 0.2 or more:
 
 | Pair | `PI_HAT` | Dataset roles |
 | --- | --- | --- |
-| NA19331, NA19334 | 0.61 (Z1 0.51, Z2 0.35) | NA19334 is an LWK member; NA19331 is an LWK **control** and a pooled AFR member |
+| NA19331, NA19334 | 0.61 (Z1 0.51, Z2 0.35) | NA19334 is an LWK member; NA19331 was an LWK **control** (since replaced) and is a pooled AFR member |
 | HG03484, HG03464 | 0.31 | both MSL members |
 | HG00116, HG00120 | 0.27 | both GBR members |
 
@@ -129,10 +129,20 @@ AFR and 544 EUR pairs sit at 0.1 to 0.2. The 0.1 to 0.2 band is not evidence of
 close kin: the cohorts pool five sub-populations, which inflates `PI_HAT`, and
 only a few thousand SNPs were used. Effect on the figures above: negligible
 for `D_N` (three close pairs among about 1,000 people). It matters for one
-control: NA19331 is a control for the LWK dataset but a close relative of an
-LWK member, so a query for that person is not an independent non-member. Not
-done: replacing that control, or excluding the three pairs and rebuilding LWK,
-MSL, GBR and the pooled sets (about 4 hours of builds plus reload).
+control: NA19331 was a control for the LWK dataset but a close relative of an
+LWK member, so a query for that person was not an independent non-member.
+**Done:** NA19331 was replaced by NA19445 in `analysis/splits/LWK_controls.txt`
+(a seeded draw among the 14 LWK samples outside the split with no `PI_HAT` of
+0.1 or more against any LWK member or control; `LWK_split.json` records the
+swap). Controls are never loaded, so the loaded LWK beacon is unchanged. The
+cleaned universe is still 3,232,835 sites, so the other 84 het tables stay
+valid; the new control has 151,376 heterozygous sites (NA19331 had 154,147).
+The pooled AFR dataset still has NA19331 as a *member*; its relative NA19334 is
+an LWK member, not an AFR one, so no related pair sits inside the pooled
+beacon. Not done: excluding the two within-dataset pairs (HG03484 and HG03464,
+both MSL members; HG00116 and HG00120, both GBR members) and rebuilding MSL, GBR
+and the pooled sets (about 3 hours of builds plus reload); the effect on the
+budget is judged negligible.
 
 **Pooled datasets overlap the populations' controls.** The pooled `AFR` and
 `EUR` members were drawn to be disjoint from every population *member* (so the
