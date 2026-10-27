@@ -1,0 +1,9 @@
+{
+  "population": "LWK",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 99,
+  "input_sha256": "95d6866c4cd39a0a4f54a0e7c606dc8d8cd8a27747ff7ae0753f36cfedb717d3",
+  "samples_file": "LWK_samples.txt"
+}

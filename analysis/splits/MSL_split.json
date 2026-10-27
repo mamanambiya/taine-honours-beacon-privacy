@@ -1,0 +1,9 @@
+{
+  "population": "MSL",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 85,
+  "input_sha256": "3ec3b627247e4f9e93787bcfbca9d7d0f2609c8e3868cbe16c7b4118a33bdecb",
+  "samples_file": "MSL_samples.txt"
+}

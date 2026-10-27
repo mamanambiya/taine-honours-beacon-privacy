@@ -1,0 +1,9 @@
+{
+  "population": "AFR",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 176,
+  "input_sha256": "6a1d826432473a8cf2685b45ba18f8f1d366f7a18563ad6ab4ed13dee133ac83",
+  "samples_file": "AFR_samples.txt"
+}

@@ -1,0 +1,9 @@
+{
+  "population": "GWD",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 111,
+  "input_sha256": "f0dddb4a147789350fd3e1822cade0ded48ef2a09cbc3259eecf9a668af417a5",
+  "samples_file": "GWD_samples.txt"
+}

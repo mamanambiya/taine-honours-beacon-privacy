@@ -1,0 +1,9 @@
+{
+  "population": "ESN",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 98,
+  "input_sha256": "cc83b8ae4bee5604355a64301b2524daa5a5aa931b3e16218e3af40d1e8acc5b",
+  "samples_file": "ESN_samples.txt"
+}

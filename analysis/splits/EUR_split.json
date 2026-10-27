@@ -1,0 +1,9 @@
+{
+  "population": "EUR",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 178,
+  "input_sha256": "1a548d9fb71820df6c06c625247c15dc0a5fb6f6637ff7070fa2f3b32260c9be",
+  "samples_file": "EUR_samples.txt"
+}

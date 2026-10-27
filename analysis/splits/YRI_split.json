@@ -1,0 +1,9 @@
+{
+  "population": "YRI",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 108,
+  "input_sha256": "41382f728e7bdea7be858e31c887193b88aca220aa1c3231ae36af8ba13fe62c",
+  "samples_file": "YRI_samples.txt"
+}
