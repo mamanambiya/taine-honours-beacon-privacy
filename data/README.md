@@ -69,9 +69,11 @@ cohorts is only interpretable if both arms' provenance is pinned.
 | Check | `analysis/lrt/beacon_check.py`: PASS on all 12, 4,451 queries each (known present 100/100 yes, known absent 100/100 no, unknown dataset id answers no) |
 | Replaces | the 20-member `<POP>_M20_S1` datasets, deleted from the same beacon on 2026-10-27 (backup `~ubuntu/backup-m20-2026-10-27/` on the VM) |
 
-Not checked: the earlier `afr_M20_S1` and `eur_M20_S1` builds used a different
-pooled sample draw and were never loaded. The public beacon URL for this
-instance was not reachable when probed.
+Not checked: the earlier `afr_M20_S1` and `eur_M20_S1` builds used a
+different pooled sample draw and were never loaded. The beacon is queried only
+through `localhost:8086` from inside the VM (no public URL is needed or
+exposed), and the query limits are raised to 1,000,000 per hour on that
+loopback-only instance.
 
 ### V6HC-S_AFR allele-count histogram (2026-10-23)
 
