@@ -1,5 +1,34 @@
 # Rebuilding the ten population beacons: the steps
 
+> **2026-10-27: what was actually run (read this first).** The steps below
+> were written for ten populations with 20 members. The rebuild that is loaded
+> on `afrigend-all-dev` differs:
+>
+> - **N = 65 members and 20 held-out controls** per dataset, ids
+>   `<POP>_M65_S1` (`make_split.py --members 65 --controls 20 --seed 1`),
+>   because the 2015 paper's beacon holds 65 people. MSL (85 samples) is the
+>   limit.
+> - **12 datasets, not 10:** the ten populations plus pooled `AFR` and `EUR`.
+>   The pooled sets are drawn only from samples that are **not members of any
+>   population dataset** (176 AFR and 178 EUR candidates left), because the
+>   beacon importer keys individuals by sample id and a sample in two datasets
+>   would replace itself (beacon issue #130). Use `--array=0-11` if you submit
+>   the builds as an array.
+> - **Source:** the NYGC 30x GRCh38 phased panel, chr 20 to 22, from
+>   `/cbio/dbs/1kg/b38/nygc_30x`, cut to the 1,004 AFR and EUR samples, then
+>   `build_population_dataset.sh` per dataset (same script, same defaults).
+>   Every dataset shares one cleaned universe of 3,232,835 sites and has
+>   allele number 130.
+> - **Result:** 9,859,803 variants over the 12 datasets (the sum of each
+>   `member_sites`), 65 samples each, and `beacon_check.py` PASS on all 12
+>   (4,451 queries each).
+> - **Loading:** the guide's D5 steps with a count check after each dataset (a
+>   piped import hung once at 55 per cent; delete the partial by `dataset_ids`
+>   before retrying). `--samples 65` in D6.
+>
+> The D_N and query figures in `data/README.md` use N as the beacon's real
+> size: quote the N = 65 row for this beacon.
+
 Every command to run, in order, with what a correct result looks like. The
 design and the reasons are in
 [`reload-population-beacons.md`](reload-population-beacons.md); this file is

@@ -57,6 +57,22 @@ cohorts is only interpretable if both arms' provenance is pinned.
 
 ## Analysed datasets
 
+### Loaded beacon datasets on afrigend-all-dev (2026-10-27)
+
+| | |
+| --- | --- |
+| Datasets | `CEU FIN GBR IBS TSI ESN GWD LWK MSL YRI AFR EUR` as `<POP>_M65_S1`, each 65 members (controls: 20 held out, not loaded) |
+| Source | NYGC 30x GRCh38 phased panel, chr 20 to 22 (`/cbio/dbs/1kg/b38/nygc_30x/1kGP_high_coverage_Illumina.chr{20,21,22}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz`), 1,004 samples (the AFR and EUR lists from the earlier build), 3,713,694 records in the cut |
+| Cleaning | biallelic SNPs, FILTER PASS or missing, no missing genotype in any member or control: 3,232,835 sites; allele number 130 |
+| Pooled sets | `AFR` and `EUR` drawn only from samples that are not members of a population dataset (beacon issue #130) |
+| Variants | 9,859,803 documents = sum of the 12 `member_sites` (CEU 610,835 to AFR 1,077,584) |
+| Check | `analysis/lrt/beacon_check.py`: PASS on all 12, 4,451 queries each (known present 100/100 yes, known absent 100/100 no, unknown dataset id answers no) |
+| Replaces | the 20-member `<POP>_M20_S1` datasets, deleted from the same beacon on 2026-10-27 (backup `~ubuntu/backup-m20-2026-10-27/` on the VM) |
+
+Not checked: the earlier `afr_M20_S1` and `eur_M20_S1` builds used a different
+pooled sample draw and were never loaded. The public beacon URL for this
+instance was not reachable when probed.
+
 ### V6HC-S_AFR allele-count histogram (2026-10-23)
 
 | | |
