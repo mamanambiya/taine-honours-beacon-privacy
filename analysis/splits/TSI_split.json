@@ -1,0 +1,9 @@
+{
+  "population": "TSI",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 107,
+  "input_sha256": "3d7f0cacb7dd77fe774c1554337bdc38ed6a55f8a97885ec4bbff21ddcf756a7",
+  "samples_file": "TSI_samples.txt"
+}

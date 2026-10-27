@@ -1,0 +1,9 @@
+{
+  "population": "IBS",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 107,
+  "input_sha256": "5b9f09b2b44a5f2b335131d1c574acabafb56d5af31b703dc5bce2b6fdbc6679",
+  "samples_file": "IBS_samples.txt"
+}

@@ -1,0 +1,9 @@
+{
+  "population": "FIN",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 99,
+  "input_sha256": "3a40cc8c8175a405526922804fbc64f0d18247c1a98b347de395f2549d46842d",
+  "samples_file": "FIN_samples.txt"
+}

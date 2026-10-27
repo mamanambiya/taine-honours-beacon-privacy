@@ -1,0 +1,9 @@
+{
+  "population": "GBR",
+  "seed": 1,
+  "n_members": 65,
+  "n_controls": 20,
+  "n_input_samples": 91,
+  "input_sha256": "f259b1b64a8cc03a8e3409707a8882b8295ca3c70a9100f7fce5dd4d0feaac4c",
+  "samples_file": "GBR_samples.txt"
+}

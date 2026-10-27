@@ -1,20 +1,30 @@
-# Rebuilding the ten population beacons: the steps
+# Rebuilding the twelve population beacons: the steps
+
+> **What this describes (2026-10-27).** The rebuild that is loaded on
+> `afrigend-all-dev`: 12 datasets `<POP>_M65_S1`, each 65 members with 20
+> held-out controls: the ten 1000 Genomes populations plus pooled `AFR` and
+> `EUR`, cut from the NYGC 30x GRCh38 panel (chr 20 to 22). Result: 9,859,803
+> variants (the sum of each `member_sites`) and `beacon_check.py` PASS on all
+> 12. The pooled sets are drawn only from samples that are not members of a
+> population dataset, because the beacon importer keys individuals by sample
+> id (beacon issue 130). Every query runs through `localhost` on the VM; no
+> public URL is needed.
 
 Every command to run, in order, with what a correct result looks like. The
 design and the reasons are in
 [`reload-population-beacons.md`](reload-population-beacons.md); this file is
 only the steps.
 
-**Status.** None of these commands has been run on ILIFU or on
-`afrigend-all-dev`. Each step says what to expect. If a result is different,
-stop and say which step it was; do not carry on.
+**Status.** These are the commands that were run on 2026-10-27, with the
+mistakes of the first draft corrected. Each step says what to expect. If a
+result is different, stop and say which step it was; do not carry on.
 
 ## Who runs what
 
 | Part | Where | Who |
 | --- | --- | --- |
 | A. Get the scripts onto ILIFU | your own computer | Taine |
-| B. Build the ten datasets | ILIFU | Taine |
+| B. Build the twelve datasets | ILIFU | Taine |
 | C. Bring the results to your computer | your own computer | Taine |
 | D. Load them into the beacon | `afrigend-all-dev` | whoever has VM access |
 | E. Verify | a computer with VM access | whoever has VM access |
@@ -22,7 +32,9 @@ stop and say which step it was; do not carry on.
 
 Parts A to C and F need only an ILIFU account. Parts D and E need the SSH alias
 `afrigend-all-dev`, which Taine may not have; if so, send the folder from
-Part C to the person who does.
+Part C to the person who does. Work on `/cbio/users/$USER` can fail with `Disk
+quota exceeded` when the account is over its quota; use `/scratch3/users/$USER`
+for scratch files then.
 
 Conventions: run each command on its own, one at a time. `$IU` is your ILIFU
 username; on your own computer set it once per terminal window. On ILIFU,
@@ -62,10 +74,14 @@ Your own computer. Make the folder on ILIFU:
 ssh $IU@transfer.ilifu.ac.za "mkdir -p /cbio/users/$IU/pop"
 ```
 
-Your own computer. Copy the three scripts:
+Your own computer. Copy the three scripts and the sample lists:
 
 ```bash
 scp analysis/splits/make_split.py analysis/lrt/build_population_dataset.sh analysis/lrt/beacon_check.py $IU@transfer.ilifu.ac.za:/cbio/users/$IU/pop/
+```
+
+```bash
+scp analysis/splits/samples/*.txt $IU@transfer.ilifu.ac.za:/cbio/users/$IU/pop/
 ```
 
 Your own computer. Check what arrived:
@@ -74,12 +90,13 @@ Your own computer. Check what arrived:
 ssh $IU@transfer.ilifu.ac.za "ls -l /cbio/users/$IU/pop/"
 ```
 
-Expect three files of 4263, 10238 and 11350 bytes. If you cannot clone, open
+Expect the three scripts of 4263, 10238 and 11350 bytes, and 14 `.txt` sample
+lists. If you cannot clone, open
 each file on GitHub, click **Raw**, and paste it into a new file with the same
 name on ILIFU; then run `wc -l` on it (226 lines for
 `build_population_dataset.sh`) and `bash -n` on it (no output means it parses).
 
-## Part B. Build the ten datasets (ILIFU)
+## Part B. Build the twelve datasets (ILIFU)
 
 Log in and get a compute node. Never run any of this on the login node:
 
@@ -107,15 +124,53 @@ SRC=/cbio/users/$USER/vcf_samples
 SIF=/cbio/users/$USER/beacon-tools.sif
 ```
 
-**B1. Check the ten source files exist.** Expect ten lines, one per
-population:
+**B1. Cut the one source VCF.** All twelve datasets are built from one file:
+the NYGC 30x GRCh38 phased panel, chr 20 to 22, restricted to the 1,004 AFR and
+EUR samples. Check the panel is there (expect three files):
 
 ```bash
-ls -l $SRC/snps_CEU.vcf.gz $SRC/snps_ESN.vcf.gz $SRC/snps_FIN.vcf.gz $SRC/snps_GBR.vcf.gz $SRC/snps_GWD.vcf.gz $SRC/snps_IBS.vcf.gz $SRC/snps_LWK.vcf.gz $SRC/snps_MSL.vcf.gz $SRC/snps_TSI.vcf.gz $SRC/snps_YRI.vcf.gz
+ls -l /cbio/dbs/1kg/b38/nygc_30x/1kGP_high_coverage_Illumina.chr2[012].filtered.SNV_INDEL_SV_phased_panel.vcf.gz
 ```
 
-If they are in another account's folder, set `SRC` to that folder, provided you
-can read it.
+Set the name for bcftools (B4 sets it again; it is needed now):
+
+```bash
+export BCFTOOLS="singularity exec --bind /cbio,/scratch3 $SIF bcftools"
+```
+
+Make the list of all 1,004 samples. Expect `1004`:
+
+```bash
+cat $POP/afr_samples.txt $POP/eur_samples.txt | sort -u > $POP/union_samples.txt; wc -l < $POP/union_samples.txt
+```
+
+Cut each chromosome, then join them (about 13 minutes in all). Expect three
+files, then a joined file of about 830 MB:
+
+```bash
+for C in 20 21 22; do $BCFTOOLS view --threads 8 -S $POP/union_samples.txt /cbio/dbs/1kg/b38/nygc_30x/1kGP_high_coverage_Illumina.chr$C.filtered.SNV_INDEL_SV_phased_panel.vcf.gz -Oz -o $POP/part_chr$C.vcf.gz; $BCFTOOLS index -t $POP/part_chr$C.vcf.gz; done
+```
+
+```bash
+$BCFTOOLS concat $POP/part_chr20.vcf.gz $POP/part_chr21.vcf.gz $POP/part_chr22.vcf.gz -Oz -o $POP/source_afr_eur_chr20-22.vcf.gz
+```
+
+```bash
+$BCFTOOLS index -t $POP/source_afr_eur_chr20-22.vcf.gz
+```
+
+Check. Expect `3713694` records and `1004` samples:
+
+```bash
+$BCFTOOLS view -H $POP/source_afr_eur_chr20-22.vcf.gz | wc -l
+```
+
+```bash
+$BCFTOOLS query -l $POP/source_afr_eur_chr20-22.vcf.gz | wc -l
+```
+
+The index warning "older than the data file" on the panel is harmless here.
+Delete the three `part_chr*` files afterwards to save space.
 
 **B2. Update the tools image.** It must contain the carrier-check warning
 (beacon PR #133):
@@ -166,40 +221,59 @@ export BEACON_REPO=/cbio/users/$USER/variant-checker-beacon
 export BEACON_CONTAINER=$SIF
 ```
 
-**B5. Make the sample lists** (one per population):
+**B5. Check the sample lists** (one per population, copied in Part A):
 
 ```bash
-for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do $BCFTOOLS query -l $SRC/snps_$P.vcf.gz > $POP/${P}_samples.txt; done
+wc -l $POP/CEU_samples.txt $POP/ESN_samples.txt $POP/FIN_samples.txt $POP/GBR_samples.txt $POP/GWD_samples.txt $POP/IBS_samples.txt $POP/LWK_samples.txt $POP/MSL_samples.txt $POP/TSI_samples.txt $POP/YRI_samples.txt
 ```
 
-Check. Expect ten lines, each at least 40:
+Expect 99, 98, 99, 91, 111, 107, 99, 85, 107, 108 in that order. MSL, with 85,
+is the limit: 65 members plus 20 controls is exactly 85.
 
-```bash
-wc -l $POP/*_samples.txt
-```
-
-**B6. Choose 20 members and 20 held-out controls per population.** The same
-seed always gives the same split. Check `python3` works first (expect a
-version number):
+**B6. Choose 65 members and 20 held-out controls per dataset.** The same seed
+always gives the same split. Check `python3` works first (expect a version
+number):
 
 ```bash
 python3 --version
 ```
 
+The ten populations first:
+
 ```bash
-for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do python3 $POP/make_split.py --population $P --samples $POP/${P}_samples.txt --members 20 --controls 20 --seed 1 --out-dir $POP; done
+for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do python3 $POP/make_split.py --population $P --samples $POP/${P}_samples.txt --members 65 --controls 20 --seed 1 --out-dir $POP; done
 ```
 
-Check. Expect `30`:
+Now the pooled `AFR` and `EUR`. They must not contain anyone who is a member of
+a population dataset, so they draw from the `*_disjoint_samples.txt` lists
+(176 AFR and 178 EUR samples; these are the pooled lists minus the 325 members
+of the five populations on that side):
+
+```bash
+for P in AFR EUR; do python3 $POP/make_split.py --population $P --samples $POP/${P}_disjoint_samples.txt --members 65 --controls 20 --seed 1 --out-dir $POP; done
+```
+
+Check. Expect `36`:
 
 ```bash
 ls $POP/*_members.txt $POP/*_controls.txt $POP/*_split.json | wc -l
 ```
 
-**B7. Submit the ten builds**, one job per population:
+Check there is no overlap. Expect `0` and `0`:
 
 ```bash
-sbatch --account=b56-cbio-001-ag --job-name=popbuild --array=0-9 --cpus-per-task=2 --mem=8G --time=1-0:0:0 --output=/cbio/users/$USER/pop/build-%A_%a.out --wrap 'P=$(echo CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI | cut -d" " -f$((SLURM_ARRAY_TASK_ID+1))); bash /cbio/users/$USER/pop/build_population_dataset.sh $P /cbio/users/$USER/vcf_samples/snps_$P.vcf.gz /cbio/users/$USER/pop/${P}_members.txt /cbio/users/$USER/pop/${P}_controls.txt /cbio/users/$USER/pop/build/$P'
+cat $POP/ESN_members.txt $POP/GWD_members.txt $POP/LWK_members.txt $POP/MSL_members.txt $POP/YRI_members.txt | sort > $POP/afr_popmembers.txt; sort $POP/AFR_members.txt | comm -12 - $POP/afr_popmembers.txt | wc -l
+```
+
+```bash
+cat $POP/CEU_members.txt $POP/FIN_members.txt $POP/GBR_members.txt $POP/IBS_members.txt $POP/TSI_members.txt | sort > $POP/eur_popmembers.txt; sort $POP/EUR_members.txt | comm -12 - $POP/eur_popmembers.txt | wc -l
+```
+
+**B7. Submit the twelve builds**, one job per dataset. All use the one source
+file:
+
+```bash
+sbatch --account=b56-cbio-001-ag --job-name=popbuild --array=0-11 --cpus-per-task=2 --mem=8G --time=1-0:0:0 --output=/cbio/users/$USER/pop/build-%A_%a.out --wrap 'P=$(echo CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI AFR EUR | cut -d" " -f$((SLURM_ARRAY_TASK_ID+1))); bash /cbio/users/$USER/pop/build_population_dataset.sh $P /cbio/users/$USER/pop/source_afr_eur_chr20-22.vcf.gz /cbio/users/$USER/pop/${P}_members.txt /cbio/users/$USER/pop/${P}_controls.txt /cbio/users/$USER/pop/build/$P'
 ```
 
 Expect `Submitted batch job <number>`. If it says the account is invalid, list
@@ -209,21 +283,37 @@ yours and use it in place of `b56-cbio-001-ag`:
 sacctmgr -nP show assoc user=$USER format=account
 ```
 
-Watch the jobs (ten tasks, running or finished):
+Watch the jobs (twelve tasks, running or finished):
 
 ```bash
 squeue -u $USER
 ```
 
+(The 2026-10-27 run used two interactive compute-node sessions with two builds
+at a time instead of Slurm; both give the same files. Each build took 46 to 68
+minutes and the twelve took about 3 hours 12 minutes in all.)
+
 **B8. Check the results** when the queue is empty. Each log's last line should
-read `<POP>: N sites vary in 20 members -> <POP>_M20_S1`:
+read `<POP>: N sites vary in 65 members -> <POP>_M65_S1`:
 
 ```bash
 tail -n 2 $POP/build-*.out
 ```
 
-Expect ten different values of `member_sites`, each far below 6,240,864, with
-the African populations above the European ones:
+Expect these values of `member_sites` (all twelve share one cleaned universe of
+3,232,835 sites and allele number 130):
+
+| Dataset | member_sites | Dataset | member_sites |
+| --- | --- | --- | --- |
+| CEU | 610,835 | LWK | 1,038,569 |
+| ESN | 1,002,769 | MSL | 1,032,590 |
+| FIN | 565,814 | TSI | 609,724 |
+| GBR | 584,895 | YRI | 1,017,091 |
+| GWD | 1,027,561 | AFR | 1,077,584 |
+| IBS | 664,903 | EUR | 627,468 |
+
+The African datasets are above the European ones, and the pooled AFR above any
+single African population:
 
 ```bash
 grep -H member_sites $POP/build/*/build_summary.json
@@ -233,20 +323,16 @@ If a build stopped with `allele number is not 2N`, `no site varies` or any
 other `build_population_dataset:` message, do not fix it by hand: tell Mamana that
 line.
 
-**B9. Find the transformed files and compress them** (the load file is big):
+**B9. Find the transformed files** (no compression is needed; the load in
+Part D reads them with `cat`):
 
 ```bash
 ls -l $POP/build/YRI/beacon/vcf_output
 ```
 
-Expect `variants_batch.jsonl` and `individuals.json` under
-`$POP/build/YRI/beacon/vcf_output`. If the names or the folder differ, stop
-and tell Mamana.
-Otherwise:
-
-```bash
-for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do gzip -v $POP/build/$P/beacon/vcf_output/variants_batch.jsonl; done
-```
+Expect `variants_batch.jsonl`, `individuals.json`, `variant_genotypes.json` and
+`transformation_summary.json` under `$POP/build/YRI/beacon/vcf_output`. If the
+names or the folder differ, stop and tell Mamana.
 
 **ROLLBACK:** not part of the steps above. It removes one population's build so
 it can be run again (the script refuses to write into an existing folder). Use
@@ -258,13 +344,16 @@ rm -rf $POP/build/YRI
 
 ## Part C. Bring the results to your computer
 
-Your own computer. Do not copy the two big intermediate VCFs:
+Your own computer. Do not copy the two big intermediate VCFs. (The 12 folders
+are about 8.8 GB; the heterozygous tables that `beacon_check.py` needs are 170
+to 240 MB each. If the machine that runs Part E is the VM, stream them there
+instead: `ssh ... "tar cf - ..." | ssh afrigend-all-dev "tar xf -"`.)
 
 ```bash
 rsync -av --exclude 'clean.vcf.gz*' --exclude 'members.vcf.gz*' $IU@transfer.ilifu.ac.za:/cbio/users/$IU/pop/build/ ~/pop-build/
 ```
 
-Your own computer. Expect ten folders:
+Your own computer. Expect twelve folders:
 
 ```bash
 ls ~/pop-build
@@ -279,15 +368,19 @@ scp $IU@transfer.ilifu.ac.za:/cbio/users/$IU/pop/*_members.txt $IU@transfer.ilif
 
 ## Part D. Load them into the beacon (afrigend-all-dev)
 
-Needs the SSH alias `afrigend-all-dev`. The existing ten datasets stay where
-they are: the new ones have different ids (`<POP>_M20_S1`), and deleting the
-old ones is a separate decision.
+Needs the SSH alias `afrigend-all-dev`. The new ids are `<POP>_M65_S1`. On
+2026-10-27 the earlier 20-member datasets (`<POP>_M20_S1`) were deleted first,
+after a backup (`mongodump` of their variants and dataset records to
+`~/backup-m20-2026-10-27/`); do that, or keep them, before loading.
 
 Your own computer. Copy the folders to the VM:
 
 ```bash
 rsync -av ~/pop-build/ afrigend-all-dev:~/pop_build/
 ```
+
+The VM had 12 GB free. The twelve load files are about 3.8 GB in all, so stream
+them straight from ILIFU into MongoDB in D5 rather than keeping copies.
 
 Your own computer. Open a shell on the VM and stay in it for the rest of Part D:
 
@@ -406,31 +499,46 @@ A=beacon-api-boolean
 ```
 
 **D4. Check nothing is loaded yet under the new ids.** Loading a dataset twice
-doubles it and is hard to undo. Expect ten lines, all `0`:
+doubles it and is hard to undo. Expect twelve lines, all `0`:
 
 ```bash
-for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do echo -n "$P "; docker exec $M mongosh beacon_db --quiet --eval "print(db.variants.countDocuments({dataset_ids: ['${P}_M20_S1']}))"; done
+for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI AFR EUR; do echo -n "$P "; docker exec $M mongosh beacon_db --quiet --eval "print(db.variants.countDocuments({dataset_ids: ['${P}_M65_S1']}))"; done
 ```
 
-**D5. Load each population once.** Use `tmux` so a lost connection does not
-stop it. Run one population at a time; after each, the number imported must
-equal that population's `member_sites` from Part B (see
-`~/pop_build/<POP>/build_summary.json`):
+**D5. Load each dataset once.** After each, the count in MongoDB must equal that
+dataset's `member_sites` from B8. Run it in `tmux` or detached (`setsid nohup`)
+so a lost connection does not stop it. The 2026-10-27 run streamed each file
+from ILIFU through your computer, with `ServerAliveInterval` so a stalled link
+fails instead of hanging, and a 15-minute limit per dataset. Your own computer,
+one dataset (replace `CEU`, and `compute-NNN` with your node alias):
 
 ```bash
-zcat ~/pop_build/YRI/beacon/vcf_output/variants_batch.jsonl.gz | docker exec -i $M mongoimport --db beacon_db --collection variants --type json --file /dev/stdin
-```
-
-If that population's file was not compressed (the name has no `.gz`), read it
-with `cat` instead of `zcat`:
-
-```bash
-cat ~/pop_build/YRI/beacon/vcf_output/variants_batch.jsonl | docker exec -i $M mongoimport --db beacon_db --collection variants --type json --file /dev/stdin
+ssh -o ServerAliveInterval=20 -o ServerAliveCountMax=3 ILIFU-compute-NNN_slurm.ilifu.ac.za "cat /cbio/users/$IU/pop/build/CEU/beacon/vcf_output/variants_batch.jsonl" | ssh -o ServerAliveInterval=20 -o ServerAliveCountMax=3 afrigend-all-dev 'docker exec -i beacon-dev-mongodb mongoimport --db beacon_db --collection variants --type json --file /dev/stdin'
 ```
 
 Expect `N document(s) imported successfully. 0 document(s) failed to import.`
-Repeat with `CEU`, `ESN`, `FIN`, `GBR`, `GWD`, `IBS`, `LWK`, `MSL` and `TSI`
-in place of `YRI`. **Never run the same population twice.**
+Check the count on the VM (expect the `member_sites` of that dataset, here
+610835):
+
+```bash
+docker exec $M mongosh beacon_db --quiet --eval "print(db.variants.countDocuments({dataset_ids: ['CEU_M65_S1']}))"
+```
+
+Repeat for `ESN`, `FIN`, `GBR`, `GWD`, `IBS`, `LWK`, `MSL`, `TSI`, `YRI`, `AFR`
+and `EUR`. **Never run the same dataset twice.** If an import stops partway
+(the count is non-zero but below `member_sites`, and does not grow), delete that
+dataset's partial documents before trying again, and only those:
+
+```bash
+docker exec $M mongosh beacon_db --quiet --eval "printjson(db.variants.deleteMany({dataset_ids: ['GWD_M65_S1']}))"
+```
+
+When all twelve are in, the total must be the sum of the twelve `member_sites`.
+Expect `9859803`:
+
+```bash
+docker exec $M mongosh beacon_db --quiet --eval "print(db.variants.countDocuments({}))"
+```
 
 **D6. Register each dataset with its sample count.** Define the names once:
 
@@ -443,11 +551,13 @@ beacon-docker() { docker run --rm --network host -u "$(id -u):$(id -g)" -e HOME=
 ```
 
 ```bash
-for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do beacon-docker python $TOOLS/data_import/register_dataset.py $DATA/$P/dataset.yaml --db beacon_db --mongo-uri "$MONGO_URI" --samples 20; done
+for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI AFR EUR; do beacon-docker python $TOOLS/data_import/register_dataset.py $DATA/$P/dataset.yaml --db beacon_db --mongo-uri "$MONGO_URI" --samples 65; done
 ```
 
-Expect, for each, `Registered dataset '<POP>_M20_S1' (...): N variants, 20
-samples`, with N equal to that population's `member_sites`.
+Each `dataset.yaml` (and `build_summary.json`) must be on the VM under
+`$DATA/<POP>/`; copy those two small files with `tar` if they are not. Expect,
+for each, `Registered dataset '<POP>_M65_S1' (...): N variants, 65 samples`, with
+N equal to that dataset's `member_sites`.
 
 **D7. Rebuild the indexes** (safe to repeat) and clear the cache:
 
@@ -455,17 +565,21 @@ samples`, with N equal to that population's `member_sites`.
 docker exec $A python manage.py create_indexes --settings=beacon_project.settings_boolean
 ```
 
-Expect a last line starting `Done.`:
+Expect a last line starting `Done.`.
+
+The API serves `/api/datasets` from a page cache in Redis, so a list read after
+a change can show the old datasets. Clear the cache. `FLUSHDB` also removes the
+rate-limit counters, which is harmless here; deleting only the cache keys is the
+narrower choice, and what the 2026-10-27 run did. Expect `OK`:
 
 ```bash
 docker exec $R redis-cli FLUSHDB
 ```
 
-Expect `OK`.
-
-**D8. Check the list.** Expect the ten new ids, each with `sampleCount` 20 and
-`variantCount` equal to its `member_sites`; the ten old datasets are still
-listed:
+**D8. Check the list.** Expect the twelve new ids, each with `sampleCount` 65
+and `variantCount` equal to its `member_sites` (and none of the old
+`<POP>_M20_S1` ids if you deleted them). A dataset record's key is `_id`, not
+`id`, if you query it in MongoDB:
 
 ```bash
 curl -s http://localhost:8086/api/datasets | python3 -m json.tool
@@ -475,11 +589,11 @@ curl -s http://localhost:8086/api/datasets | python3 -m json.tool
 id; this touches only that dataset) and then clear the cache:
 
 ```bash
-docker exec $M mongosh beacon_db --quiet --eval "printjson(db.variants.deleteMany({dataset_ids: ['YRI_M20_S1']}))"
+docker exec $M mongosh beacon_db --quiet --eval "printjson(db.variants.deleteMany({dataset_ids: ['YRI_M65_S1']}))"
 ```
 
 ```bash
-docker exec $M mongosh beacon_db --quiet --eval "printjson(db.datasets.deleteOne({_id: 'YRI_M20_S1'}))"
+docker exec $M mongosh beacon_db --quiet --eval "printjson(db.datasets.deleteOne({_id: 'YRI_M65_S1'}))"
 ```
 
 ```bash
@@ -498,27 +612,31 @@ docker compose -f compose/docker-compose.dev.yml up -d --force-recreate --no-dep
 
 ## Part E. Verify against the data
 
-On a computer with VM access, from the repository folder. Open the tunnel in a
-second window and leave it running:
+Run the check on the VM, against `localhost`. No public URL and no tunnel are
+needed. The check reads each dataset's ground truth (`present_sites.tsv`,
+`absent_sites.tsv`, `members.txt`, `controls.txt` and the `het/` tables, 170 to
+240 MB per dataset, about 2.4 GB for twelve). Put them under
+`~/pop65_build/<POP>/` on the VM, for example by streaming from ILIFU:
 
 ```bash
-ssh -N -L 8086:127.0.0.1:8086 afrigend-all-dev
+ssh ILIFU-compute-NNN_slurm.ilifu.ac.za "cd /cbio/users/$IU/pop/build/CEU && tar cf - present_sites.tsv absent_sites.tsv members.txt controls.txt het" | ssh afrigend-all-dev "mkdir -p ~/pop65_build/CEU && cd ~/pop65_build/CEU && tar xf -"
 ```
 
-First window:
+Repeat for the other eleven. Copy `beacon_check.py` to `~/pop65_build/`. On
+the VM, run all twelve detached (about 4 to 5 minutes each):
 
 ```bash
-mkdir -p results/tables
+cd ~/pop65_build && mkdir -p checks && for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI AFR EUR; do python3 beacon_check.py --base-url http://127.0.0.1:8086 --build-dir ~/pop65_build/$P --dataset ${P}_M65_S1 --out checks/beacon_check_$P.json > checks/beacon_check_$P.log 2>&1; echo "$P exit $? $(tail -1 checks/beacon_check_$P.log)"; done
 ```
 
-```bash
-for P in CEU ESN FIN GBR GWD IBS LWK MSL TSI YRI; do python3 analysis/lrt/beacon_check.py --base-url http://127.0.0.1:8086 --build-dir ~/pop-build/$P --per-individual 10 --out results/tables/beacon_check_$P.json; echo "$P exit $?"; done
-```
-
-Expect `exit 0` ten times. The check asks a known site first (it must answer
-yes), then 100 sites a member carries (all yes), 100 sites no member carries
-(all no), a dataset-scoping control, and every member's and control's
-heterozygous sites. **No attack power number is quoted until all ten exit 0.**
+(Wrap it in a script run with `setsid nohup bash script.sh &` so it survives a
+closed terminal.) Expect `exit 0` twelve times and, in every log, `PASS (4451
+queries)`. The check asks a known site first (it must answer yes), then 100 sites
+a member carries (all yes), 100 sites no member carries (all no), a
+dataset-scoping control, and the heterozygous sites of every member and control.
+**No attack power number is quoted until all twelve exit 0.** The results from
+2026-10-27 are in `results/tables/beacon_check_<POP>.json` (git-ignored; the
+outcome is also recorded in `data/README.md`).
 
 ## Part F. The V6HC-S_AFR allele counts (ILIFU)
 
