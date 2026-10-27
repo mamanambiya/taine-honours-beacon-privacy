@@ -107,8 +107,10 @@ and it is not yet a test of that hypothesis. The V6HC-S_AFR row (whole
 genome, 1,895 people) reproduces the earlier figure and is the control for the
 calculation. The model assumes Hardy-Weinberg pairing, independent sites and
 unrelated people; whether the 501 and 503 are all unrelated was not checked.
-The attack-simulation power (as opposed to this closed-form budget) at n = 65
-has not been run on the loaded datasets.
+The attack was also run against the loaded beacons' own answers
+(`analysis/power/README.md`): members are always detected, and the queries for a
+5 per cent false-positive rate are 109 for the pooled AFR beacon and 150 for
+the pooled EUR beacon, against 95 and 126 from the closed form above.
 
 ### V6HC-S_AFR allele-count histogram (2026-10-23)
 
