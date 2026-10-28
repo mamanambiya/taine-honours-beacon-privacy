@@ -1,7 +1,9 @@
 import os, subprocess, sys, json, time
-sys.path.insert(0, os.path.expanduser(os.environ.get("POP65_BUILD", "~/pop65_build") + "/attack"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import real_beacon_attack as rba
-ROOT = os.path.expanduser(os.environ.get("POP65_BUILD", "~/pop65_build")); OUT = ROOT + "/attack"
+ROOT = os.path.expanduser(os.environ.get("POP65_BUILD", "~/pop65_build"))
+OUT = os.path.expanduser(os.environ.get("POP65_ATTACK_OUT", ROOT + "/attack"))
+os.makedirs(OUT, exist_ok=True)
 GROUPS = {"AFR": "ESN GWD LWK MSL YRI AFR".split(), "EUR": "CEU FIN GBR IBS TSI EUR".split()}
 CONT = {p: g for g, ps in GROUPS.items() for p in ps}
 rd = lambda f: [l.strip() for l in open(f) if l.strip()]
