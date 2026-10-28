@@ -2,6 +2,8 @@ import os, subprocess, sys, json, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import real_beacon_attack as rba
 ROOT = os.path.expanduser(os.environ.get("POP65_BUILD", "~/pop65_build"))
+if not os.path.isdir(ROOT + "/CEU"):
+    sys.exit(f"POP65_BUILD not found or not a build directory: {ROOT} (set POP65_BUILD to the folder holding CEU, ESN, ...)")
 OUT = os.path.expanduser(os.environ.get("POP65_ATTACK_OUT", ROOT + "/attack"))
 os.makedirs(OUT, exist_ok=True)
 GROUPS = {"AFR": "ESN GWD LWK MSL YRI AFR".split(), "EUR": "CEU FIN GBR IBS TSI EUR".split()}

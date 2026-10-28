@@ -2,6 +2,8 @@ import os, sys, random, json, urllib.request, urllib.parse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import real_beacon_attack as rba
 R = os.path.expanduser(os.environ.get("POP65_BUILD", "~/pop65_build"))
+if not os.path.isdir(R + "/LWK"):
+    sys.exit(f"POP65_BUILD not found or not a build directory: {R} (set POP65_BUILD to the folder holding CEU, ESN, ...)")
 rng = random.Random(1)
 tot = bad = 0
 for pop, people in (("LWK", ["NA19445", None]), ("EUR", [None, None])):
