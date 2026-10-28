@@ -105,7 +105,7 @@ Parameters of `/api/g_variants`, from `views_boolean.py` and
 | `referenceBases`, `alternateBases` | the alleles |
 | `variantType` | `SNV` (`SNP` is accepted and means `SNV`), also `DEL INS DUP INV CNV`; the loaded data holds only SNVs |
 | `datasetIds` | restrict the query to one dataset (see section 6) |
-| `requestedGranularity` | `boolean` (default), `aggregated`, `record` |
+| `requestedGranularity` | `boolean` (default), `aggregated`, `record` (the specification lists `boolean`, `count`, `record`; see section 6) |
 
 **One allele in one dataset.** The standard question:
 
@@ -163,11 +163,32 @@ ssh afrigend-all-dev "curl -s 'http://127.0.0.1:8086/api/g_variants?assemblyId=G
 
 Expect `returnedGranularity: "aggregated"` and, in `resultSets[0].results`,
 `frequencyInPopulations[].frequencies[].alleleFrequency` (it was `0.1` for this
-variant in CEU). The code rounds the frequency and suppresses small cells
-before publishing (`beacon_api/privacy.py`), because an exact frequency
-reveals the carrier count. Note for the study: this dev beacon answers more than
-yes or no when asked for `aggregated`; the live production beacon was
-measured boolean-only on 2026-08-21 (`beacon-constraints.md`).
+variant in CEU).
+
+**This frequency discloses the exact carrier count on these beacons.** The code
+rounds the frequency to 3 decimals and withholds values below 0.01
+(`beacon_api/privacy.py`, defaults `DEFAULT_AF_DECIMALS = 3`,
+`DEFAULT_AF_MIN_PUBLISHED = 0.01`). That grid was chosen for the 1,895-sample
+V6HC-S_AFR panel (3,790 alleles, 1/2N about 0.00026). Each beacon here has 65
+members, so 2N = 130 and 1/2N = 0.0077, which is coarser than the 0.001 grid:
+multiplying a published frequency by 130 gives a whole number. Measured on the
+first six CEU sites (`present_sites.tsv`), asking `aggregated` for each:
+
+| Site | Published AF | AF x 130 |
+| --- | --- | --- |
+| chr20:709681 G>C | 0.1 | 13.0 |
+| chr20:1717183 C>G | 0.5 | 65.0 |
+| chr20:1915454 C>T | 0.362 | 47.06 |
+| chr20:1938781 T>C | 0.969 | 125.97 |
+| chr20:2135734 G>A | withheld | (1 carrier allele, 1/130 = 0.0077 < 0.01) |
+| chr20:4107457 G>T | 0.146 | 18.98 |
+
+So a published frequency reads as a count (13, 65, 47, 126, 19 alleles), and only
+singletons are withheld. The code's own comment says a materially smaller cohort
+needs a different rule. This is the re-identification primitive the study is
+about, available to anyone who asks `requestedGranularity=aggregated` on this dev
+beacon. The live production beacon was measured boolean-only on 2026-08-21
+(`beacon-constraints.md`); that was not re-checked today.
 
 **A build it does not hold:**
 
@@ -204,10 +225,25 @@ Read `responseSummary.exists` for the dataset you named, never the list.
 Why (from `views_boolean.py`): for a locus query the beacon loops over every
 dataset and checks the variant inside the query already narrowed to the named
 `datasetIds`, so unnamed datasets come back false. The per-dataset list is only
-built for locus queries; a parameterless query returns an empty list. Whether
-the Beacon v2 specification expects unevaluated datasets to be listed at all
-was not checked here (the specification's `includeResultsetResponses` parameter
-controls which result sets are returned; this beacon was not tested with it).
+built for locus queries; a parameterless query returns an empty list.
+
+**Against the Beacon v2 specification** (read on 2026-10-28 from
+`ga4gh-beacon/beacon-v2`, branch `main`, `framework/src/`):
+
+- `includeResultsetResponses` takes `ALL`, `HIT`, `MISS` or `NONE`, and "if null
+  (not specified), the default value of 'HIT' is assumed". By default a response
+  should therefore hold only the result sets with a hit. This beacon ignores the
+  parameter: with `HIT`, `MISS`, `NONE` and `ALL` it returned all 12 result sets
+  every time (tested on the VM). Listing all 12, including misses, is not the
+  default behaviour in the specification.
+- `requestedGranularity` has the values `boolean`, `count` and `record`, default
+  `boolean`. `aggregated`, which this beacon accepts and answers with a
+  frequency, is not in that list on `main`. It is a beacon extension. (An older
+  v2.0 text may differ; only `main` was read.)
+- What the specification says `datasetIds` must do was not found: in `main` the
+  request-parameters schema is a placeholder, so the behaviour of `datasetIds`
+  here is described from the code and from the measurements above, not from the
+  specification.
 
 ## 7. Limits
 
