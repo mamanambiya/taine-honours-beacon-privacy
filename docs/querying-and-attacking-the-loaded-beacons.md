@@ -67,9 +67,11 @@ Expect `exit 0` and a PASS line for each population (all twelve passed on
 `analysis/power/real_beacon_attack.py` scores outsiders against the set of sites
 each beacon holds, so it sends no queries for the scoring. The driver that ran
 all twelve is `analysis/power/run_attack_vm.py`, copied here as it ran on the VM
-(paths are the VM's: `~/pop65_build` and `~/pop65_build/attack`). It needs
-`real_beacon_attack.py` in `~/pop65_build/attack/` and a running
-`beacon-dev-mongodb` container.
+(paths default to the VM's `~/pop65_build` and `~/pop65_build/attack`). Two
+environment variables change that: `POP65_BUILD` (the build directory, read only)
+and `POP65_ATTACK_OUT` (where the sites CSVs and the results are written, default
+`<POP65_BUILD>/attack`). It imports `real_beacon_attack.py` from its own folder,
+and needs a running `beacon-dev-mongodb` container.
 
 What it does for each dataset:
 
