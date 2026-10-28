@@ -67,9 +67,26 @@ Queries needed for a 5 per cent false-positive rate, per beacon:
 ![Attack budget on the 12 loaded beacons](figures/attack_budget.png)
 
 False-positive rate against the number of queried sites (same-continent
-outsiders):
+outsiders). One panel per continent, one colour and marker per beacon, the number
+of queries at 5 per cent in brackets:
 
 ![False-positive rate against queries](figures/attack_fpr_curves.png)
+
+Why the budgets differ: the share of an outsider's heterozygous sites that the
+beacon does not list. The more sites are missing, the sooner an outsider gets a
+"no":
+
+![Outsiders' sites absent from each beacon](figures/attack_absent_fraction.png)
+
+![Budget against the share of missing sites](figures/attack_budget_vs_absent.png)
+
+The dashed line is `ln 0.05 / ln(1 - a)`, which treats every outsider as having
+the same share `a`; the points lie above it because outsiders differ in their
+share. The next figure plots the same budgets against the number of sites each
+beacon lists. Size and ancestry are not separated by this design (see the limits
+in `analysis/power/README.md`):
+
+![Budget against beacon size](figures/attack_budget_vs_size.png)
 
 The numbers behind the figures, the method and its limits are in
 [`../analysis/power/README.md`](../analysis/power/README.md). The figures are
