@@ -1,7 +1,7 @@
 import os, sys, random, json, urllib.request, urllib.parse
-sys.path.insert(0, os.path.expanduser("~/pop65_build/attack"))
+sys.path.insert(0, os.path.expanduser(os.environ.get("POP65_BUILD", "~/pop65_build") + "/attack"))
 import real_beacon_attack as rba
-R = os.path.expanduser("~/pop65_build")
+R = os.path.expanduser(os.environ.get("POP65_BUILD", "~/pop65_build"))
 rng = random.Random(1)
 tot = bad = 0
 for pop, people in (("LWK", ["NA19445", None]), ("EUR", [None, None])):
