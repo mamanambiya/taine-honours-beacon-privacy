@@ -33,6 +33,13 @@ flowchart LR
     G --> H["results JSON<br/>+ make_real_figures.py"]
 ```
 
+The build starts on the cluster, where each population's 65 members are cut out
+of the panel and every site that none of them carries is dropped, so a beacon
+lists only what its members carry. The datasets are then copied to the dev VM,
+loaded into the beacon's database and registered, and checked: a member's allele
+must answer yes and an allele no member carries must answer no. Only then is the
+attack scored.
+
 ## How: one query
 
 ```mermaid
@@ -48,6 +55,11 @@ sequenceDiagram
     API-->>Mac: envelope: responseSummary.exists (true or false)
 ```
 
+One question is an HTTP request to the beacon on the VM, restricted to a single
+dataset with `datasetIds`. The beacon looks for a stored variant with that
+position, alleles and dataset, and answers only yes or no
+(`responseSummary.exists`).
+
 ## How: the attack
 
 ```mermaid
@@ -59,6 +71,13 @@ flowchart TD
     D -- "no, all yes" --> M["accept: member"]
     M --> R["members: always accepted (power 1)<br/>outsiders: accepted only if all n answer yes<br/>= the false-positive rate"]
 ```
+
+The attacker holds one person's genome and asks the beacon about that person's
+heterozygous positions, one at a time. A real member carries every allele they
+have, so a member never gets a "no". An outsider eventually meets a site the
+beacon does not list. So the rule is: reject membership as soon as one answer is
+no. Members are always accepted; the quantity that varies is how many queries it
+takes before an outsider is rejected.
 
 ## Results
 
@@ -87,6 +106,39 @@ beacon lists. Size and ancestry are not separated by this design (see the limits
 in `analysis/power/README.md`):
 
 ![Budget against beacon size](figures/attack_budget_vs_size.png)
+
+### What the figures show
+
+- **Fewer queries on the African beacons.** Against same-continent outsiders the
+  five African population beacons need 82 to 97 queries for a 5 per cent
+  false-positive rate (mean 89.6), the five European ones 117 to 144 (mean 133.2);
+  the pooled sets need 109 (AFR) and 150 (EUR). Every African beacon needs fewer
+  queries than every European one, and the curves for the African beacons fall
+  faster (budget figure and curves figure).
+- **The reason is missing sites.** An outsider's heterozygous sites are more often
+  absent from an African beacon: the mean share is 0.028 to 0.039 across the
+  African beacons and 0.021 to 0.029 across the European ones. A higher share
+  means a "no" arrives sooner, which is the falling budget against share in the
+  scatter figure.
+- **Against the beacon's own 20 controls the picture is weaker.** The direction
+  is the same (mean 133 for African, 173 for European) but the ranges overlap (for
+  example IBS needs 123) and each beacon has only 20 such people (FIN's 248 is an
+  outlier). The bars with a hatch in the budget figure are these.
+- **Size and ancestry move together.** The African beacons list about 1.0 million
+  sites and the European ones about 0.6 million, so the size figure cannot say
+  which of the two drives the budget.
+
+### What the figures do not show
+
+- That ancestry causes the difference. Each beacon was drawn once, the same
+  outsiders are used for several beacons, size differs by ancestry, and
+  sub-population structure inside each continent is not separated out. The limits
+  are listed in `../analysis/power/README.md`.
+- Anything about queries sent to the live beacon: the scoring sends none. Only 400
+  live queries were sent, to check that the scoring agrees with the beacon's real
+  answers (it did, every time).
+- Anything about a beacon that answers wrongly on purpose (a larger mismatch rate)
+  or that withholds sites.
 
 The numbers behind the figures, the method and its limits are in
 [`../analysis/power/README.md`](../analysis/power/README.md). The figures are
