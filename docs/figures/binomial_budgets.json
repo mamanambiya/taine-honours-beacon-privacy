@@ -1,0 +1,222 @@
+{
+  "alpha": 0.05,
+  "member_power": 0.95,
+  "rows": {
+    "AFR_continent": {
+      "outsiders": 397,
+      "budget_by_delta": {
+        "0.0": 109,
+        "0.001": 174,
+        "0.003": 233,
+        "0.01": 746
+      }
+    },
+    "AFR_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 116,
+        "0.001": 185,
+        "0.003": 247,
+        "0.01": 825
+      }
+    },
+    "CEU_continent": {
+      "outsiders": 392,
+      "budget_by_delta": {
+        "0.0": 139,
+        "0.001": 225,
+        "0.003": 376,
+        "0.01": 1983
+      }
+    },
+    "CEU_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 147,
+        "0.001": 235,
+        "0.003": 387,
+        "0.01": 1810
+      }
+    },
+    "ESN_continent": {
+      "outsiders": 397,
+      "budget_by_delta": {
+        "0.0": 92,
+        "0.001": 149,
+        "0.003": 202,
+        "0.01": 592
+      }
+    },
+    "ESN_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 138,
+        "0.001": 220,
+        "0.003": 362,
+        "0.01": 1321
+      }
+    },
+    "EUR_continent": {
+      "outsiders": 392,
+      "budget_by_delta": {
+        "0.0": 150,
+        "0.001": 240,
+        "0.003": 398,
+        "0.01": null
+      }
+    },
+    "EUR_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 138,
+        "0.001": 222,
+        "0.003": 370,
+        "0.01": 1721
+      }
+    },
+    "FIN_continent": {
+      "outsiders": 392,
+      "budget_by_delta": {
+        "0.0": 117,
+        "0.001": 192,
+        "0.003": 261,
+        "0.01": 1480
+      }
+    },
+    "FIN_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 248,
+        "0.001": 530,
+        "0.003": 1012,
+        "0.01": null
+      }
+    },
+    "GBR_continent": {
+      "outsiders": 392,
+      "budget_by_delta": {
+        "0.0": 134,
+        "0.001": 215,
+        "0.003": 358,
+        "0.01": 1492
+      }
+    },
+    "GBR_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 187,
+        "0.001": 297,
+        "0.003": 578,
+        "0.01": null
+      }
+    },
+    "GWD_continent": {
+      "outsiders": 397,
+      "budget_by_delta": {
+        "0.0": 82,
+        "0.001": 133,
+        "0.003": 178,
+        "0.01": 386
+      }
+    },
+    "GWD_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 122,
+        "0.001": 194,
+        "0.003": 258,
+        "0.01": 917
+      }
+    },
+    "IBS_continent": {
+      "outsiders": 392,
+      "budget_by_delta": {
+        "0.0": 144,
+        "0.001": 231,
+        "0.003": 383,
+        "0.01": 1814
+      }
+    },
+    "IBS_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 123,
+        "0.001": 198,
+        "0.003": 265,
+        "0.01": 1074
+      }
+    },
+    "LWK_continent": {
+      "outsiders": 397,
+      "budget_by_delta": {
+        "0.0": 82,
+        "0.001": 132,
+        "0.003": 178,
+        "0.01": 390
+      }
+    },
+    "LWK_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 142,
+        "0.001": 227,
+        "0.003": 374,
+        "0.01": 1642
+      }
+    },
+    "MSL_continent": {
+      "outsiders": 397,
+      "budget_by_delta": {
+        "0.0": 97,
+        "0.001": 155,
+        "0.003": 209,
+        "0.01": 540
+      }
+    },
+    "MSL_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 136,
+        "0.001": 217,
+        "0.003": 358,
+        "0.01": 1324
+      }
+    },
+    "TSI_continent": {
+      "outsiders": 392,
+      "budget_by_delta": {
+        "0.0": 132,
+        "0.001": 212,
+        "0.003": 353,
+        "0.01": 1400
+      }
+    },
+    "TSI_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 160,
+        "0.001": 255,
+        "0.003": 419,
+        "0.01": null
+      }
+    },
+    "YRI_continent": {
+      "outsiders": 397,
+      "budget_by_delta": {
+        "0.0": 95,
+        "0.001": 155,
+        "0.003": 209,
+        "0.01": 609
+      }
+    },
+    "YRI_controls": {
+      "outsiders": 20,
+      "budget_by_delta": {
+        "0.0": 128,
+        "0.001": 203,
+        "0.003": 271,
+        "0.01": 1071
+      }
+    }
+  }
+}
