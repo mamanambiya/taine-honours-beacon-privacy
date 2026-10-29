@@ -23,7 +23,7 @@ import math
 import os
 import sys
 
-__all__ = ["accept_cutoff", "p_at_most", "fpr", "budget"]
+__all__ = ["accept_cutoff", "p_at_most", "fpr", "budget", "power_at"]
 
 
 def _log_comb(n, k):
@@ -78,6 +78,27 @@ def budget(outsiders, alpha, delta, power, max_queries):
         if fpr(outsiders, n, delta, power) <= alpha:
             return n
     return None
+
+
+def power_at(outsiders, n, delta, alpha):
+    """Empirical power at ``n`` queries with the false-positive rate held <= alpha.
+
+    The cutoff is the largest ``c`` (call "member" when nos <= c) whose
+    false-positive rate over ``outsiders`` is still <= ``alpha``; power is then
+    P(Binomial(n, delta) <= c), the share of true members accepted. When even
+    ``c = 0`` has a false-positive rate above ``alpha`` no test with that
+    control exists at this ``n`` and the power is 0. With ``delta = 0`` the
+    power is therefore 0 below the budget and 1 from it: a step.
+    """
+    if not outsiders:
+        raise ValueError("no outsiders")
+    c = -1
+    while c < n:
+        rate = sum(p_at_most(c + 1, h, m, n) for h, m in outsiders) / len(outsiders)
+        if rate > alpha:
+            break
+        c += 1
+    return 0.0 if c < 0 else _binom_cdf(c, n, delta)
 
 
 def _main(argv):

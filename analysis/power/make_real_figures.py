@@ -14,6 +14,11 @@ Reads ``attack_<POP>_<set>.json`` (written by ``run_attack_vm.py``) from
   that share, with the single-rate approximation ``ln 0.05 / ln(1 - a)``.
 * ``attack_budget_vs_size.png``: queries for 5 per cent against the number of
   sites the beacon lists.
+* ``attack_budget_vs_delta.png`` (only with ``--binomial``): queries for 5 per
+  cent when each answer may be wrong with probability delta, from
+  ``binomial_delta.py``.
+* ``attack_power_curves.png`` (only with ``--binomial``): empirical power against
+  queries with the false-positive rate held at 5 per cent, for several delta.
 
 Needs matplotlib. Usage::
 
@@ -159,10 +164,64 @@ def scatter_figure(attack_dir, out_path, x_of, xlabel, title, curve=False):
     plt.close(fig)
 
 
+def delta_figure(binomial_path, out_path):
+    """Budget against delta, same-continent outsiders, one line per beacon."""
+    with open(binomial_path) as handle:
+        rows = json.load(handle)["rows"]
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
+    for ax, group, title in ((axes[0], AFRICAN, "African beacons"),
+                             (axes[1], EUROPEAN, "European beacons")):
+        for i, pop in enumerate(group):
+            by_delta = rows[f"{pop}_continent"]["budget_by_delta"]
+            deltas = sorted(by_delta, key=float)
+            pts = [(k, by_delta[k]) for k in deltas if by_delta[k] is not None]
+            ax.plot([deltas.index(k) for k, _ in pts], [v for _, v in pts],
+                    marker=MARKERS[i], markersize=5, linewidth=1.5,
+                    color=PALETTE[i], label=pop)
+        ax.set_xticks(range(len(deltas)))
+        ax.set_xticklabels(deltas)
+        ax.set_yscale("log")
+        ax.set_xlabel("mismatch rate delta")
+        ax.set_title(title)
+        ax.legend(frameon=False, fontsize=9, loc="upper left")
+        ax.spines[["top", "right"]].set_visible(False)
+    axes[0].set_ylabel("queries for a 5% false-positive rate")
+    fig.suptitle("Budget when each answer may be wrong (member acceptance 95%); "
+                 "a missing point is above 2000 queries")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def power_figure(attack_dir, out_path):
+    """Power against queries at 5% false-positive rate: one panel per delta."""
+    import binomial_delta as bd
+
+    grid = list(range(20, 1201, 20))
+    pops = ["YRI", "AFR", "CEU", "EUR"]
+    deltas = [0.0, 0.001, 0.01]
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4.6), sharey=True)
+    for ax, delta in zip(axes, deltas):
+        for i, pop in enumerate(pops):
+            outs = [tuple(x) for x in load(attack_dir, pop, "continent")["outsider_counts"]]
+            ys = [bd.power_at(outs, n, delta, 0.05) for n in grid]
+            ax.plot(grid, ys, color=PALETTE[i], linewidth=1.6, label=pop)
+        ax.set_title(f"delta = {delta:g}")
+        ax.set_xlabel("queried heterozygous sites (n)")
+        ax.spines[["top", "right"]].set_visible(False)
+    axes[0].set_ylabel("empirical power (false-positive rate held at 5%)")
+    axes[0].legend(frameon=False, title="beacon")
+    fig.suptitle("Power against queries, same-continent outsiders")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--attack-dir", required=True)
     p.add_argument("--out-dir", required=True)
+    p.add_argument("--binomial", help="binomial_budgets.json from binomial_delta.py")
     a = p.parse_args()
     os.makedirs(a.out_dir, exist_ok=True)
     budget_figure(a.attack_dir, os.path.join(a.out_dir, "attack_budget.png"))
@@ -177,6 +236,9 @@ def main():
                    lambda d: d["beacon_sites"] / 1e6,
                    "sites the beacon lists (millions)",
                    "Budget against beacon size")
+    if a.binomial:
+        delta_figure(a.binomial, os.path.join(a.out_dir, "attack_budget_vs_delta.png"))
+        power_figure(a.attack_dir, os.path.join(a.out_dir, "attack_power_curves.png"))
     print("wrote", sorted(os.listdir(a.out_dir)))
 
 

@@ -79,6 +79,12 @@ beacon does not list. So the rule is: reject membership as soon as one answer is
 no. Members are always accepted; the quantity that varies is how many queries it
 takes before an outsider is rejected.
 
+This is the likelihood-ratio test with the mismatch rate `delta` set to zero.
+That is justified here because the beacon is built from the same VCFs the attacker
+queries, so a member's genome and the beacon agree exactly. If the attacker's
+genome has errors (`delta` above zero), the test counts "no" answers instead; see
+"Sensitivity to a non-zero mismatch rate" below.
+
 ## Results
 
 Queries needed for a 5 per cent false-positive rate, per beacon:
@@ -137,8 +143,51 @@ in `analysis/power/README.md`):
 - Anything about queries sent to the live beacon: the scoring sends none. Only 400
   live queries were sent, to check that the scoring agrees with the beacon's real
   answers (it did, every time).
-- Anything about a beacon that answers wrongly on purpose (a larger mismatch rate)
-  or that withholds sites.
+- Anything about a beacon that answers wrongly on purpose or that withholds sites.
+  An attacker whose own genome has errors is covered in the next section.
+
+## Sensitivity to a non-zero mismatch rate
+
+The paper's test does not reject on a single "no". It allows each queried genotype
+to be wrong with probability `delta` (sequencing or calling error) and tests the
+number of "no" answers. `analysis/power/binomial_delta.py` does this from the
+saved results, sending no queries:
+
+- a member's number of nos is Binomial(n, `delta`); the rule calls "member" when
+  the number of nos is at most `c`, the smallest `c` that accepts a member with
+  probability 0.95;
+- an outsider's number of nos in `n` distinct sites is hypergeometric, from the
+  saved counts of heterozygous sites and how many the beacon lacks;
+- with `delta = 0`, `c = 0` and the budgets are exactly those above (a unit test
+  checks this).
+
+Queries for a 5 per cent false-positive rate, same-continent outsiders (the
+figure has all twelve beacons; the values are in `figures/binomial_budgets.json`):
+
+![Budget against the mismatch rate](figures/attack_budget_vs_delta.png)
+
+Empirical power (the share of members accepted) against queries, with the
+false-positive rate held at 5 per cent, which is the quantity the paper's power
+curve plots. The false-positive-rate figure above asks the other question: how
+often an outsider is wrongly accepted at a given `n`.
+
+![Power against queries](figures/attack_power_curves.png)
+
+What it shows and does not show:
+
+- **The two curves are two views of one test.** At each `n` pick the cutoff `c`
+  that holds the false-positive rate at 5 per cent, then read the power. At
+  `delta = 0` that is a step: power is 0 below the budget (no cutoff holds 5 per
+  cent) and 1 from it. With `delta` above zero the power rises gradually.
+- **A mismatch rate raises every budget.** From 0.001 about 60 per cent more
+  queries; at 0.01 the European beacons need 1,400 to 2,000 queries or do not
+  reach 5 per cent within 2,000, against 390 to 750 for the African ones.
+- **The saw-tooth at `delta = 0.01` is real, not noise.** The cutoff `c` is a whole
+  number, so power drops each time `c` has to stay put while `n` grows and jumps
+  when `c` rises by one. A randomised test would smooth it.
+- **It does not say what delta an attacker faces.** The range 0.001 to 0.01 and
+  the 95 per cent member acceptance are choices made here, not measurements.
+  `methods-lrt.md` uses `delta = 1e-6` for the simulation.
 
 The numbers behind the figures, the method and its limits are in
 [`../analysis/power/README.md`](../analysis/power/README.md). The figures are
